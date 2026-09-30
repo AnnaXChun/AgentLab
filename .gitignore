@@ -8,3 +8,7 @@ outputs/
 *.egg-info/
 
 .DS_Store
+.benchmarks/
+results/
+.env.*
+!.env.example

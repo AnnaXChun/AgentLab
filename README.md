@@ -4,6 +4,14 @@ The execution, evidence and data layer underneath autonomous experimentation.
 An external agent chooses an action; this runtime executes it and records what happened.
 AI4S is the first domain showcase. Python 3.12, Apache-2.0, no LLM API key required.
 
+Version 0.3 adds pinned ScienceAgentBench and tau2 telecom-solo adapters, an
+OpenAI-compatible structured-action backend, and a resumable batch runner.
+See [benchmark setup and protocols](docs/benchmarks.md) and
+[benchmark selection](docs/benchmark_selection.md).
+Environment calibration is separate from real-model baseline measurement.
+See the [0.3 delivery report](docs/benchmark_delivery.md) for installed environments,
+measured calibration results, replay checks and current limits.
+
 ```python
 state = await runtime.get_state(experiment_id, run_id)
 action = await agent_backend.next_action(state)

@@ -6,3 +6,7 @@ outputs
 __pycache__
 
 .DS_Store
+
+.benchmarks
+results
+.env.*

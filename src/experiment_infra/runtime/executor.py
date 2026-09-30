@@ -439,12 +439,14 @@ class ExperimentRuntime:
             "last_step_id": steps[-1].step_id if steps else (run.parent_step_id if run else None),
         }
 
-    async def execute(self, experiment_id, action: Action, *, run_id):
+    async def execute(self, experiment_id, action: Action, *, run_id, token_usage=None):
         lock = self.locks.setdefault(experiment_id, asyncio.Lock())
         async with lock:
-            return await self._execute(experiment_id, Action.model_validate(action), run_id)
+            return await self._execute(
+                experiment_id, Action.model_validate(action), run_id, token_usage
+            )
 
-    async def _execute(self, experiment_id, action, run_id):
+    async def _execute(self, experiment_id, action, run_id, token_usage=None):
         run = await self._scoped(run_id, experiment_id, "Run")
         if run.status != "RUNNING" or not run.environment_handle:
             raise ValueError("Run is not executable")
@@ -633,6 +635,7 @@ class ExperimentRuntime:
                 artifact_ids=created,
                 state_after=after,
                 latency=(perf_counter() - started) * 1000,
+                token_usage=token_usage,
                 parent_step_id=before["last_step_id"],
                 branch_id=run_id,
             )

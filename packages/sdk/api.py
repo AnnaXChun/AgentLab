@@ -84,7 +84,7 @@ def create_app(runtime=None, experiment_runtime=None):
         if runtime is None:
             app.state.runtime.engine.dispose()
 
-    app = FastAPI(title="Agent Experiment Infrastructure", version="0.2.0", lifespan=lifespan)
+    app = FastAPI(title="Agent Experiment Infrastructure", version="0.3.0", lifespan=lifespan)
 
     async def invoke(episode_id, branch_id, operation):
         lock = app.state.locks.setdefault(episode_id, asyncio.Lock())
