@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "retrieve",
+        "tool",
+        "sandbox",
+        "claim",
+        "verify",
+        "message",
+        "finish"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "title": "AgentAction",
+  "type": "object"
+}

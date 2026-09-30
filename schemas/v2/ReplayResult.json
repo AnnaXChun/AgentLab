@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "original_run_id": {
+      "title": "Original Run Id",
+      "type": "string"
+    },
+    "replay_run_id": {
+      "title": "Replay Run Id",
+      "type": "string"
+    },
+    "matched": {
+      "title": "Matched",
+      "type": "boolean"
+    },
+    "comparisons": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Comparisons",
+      "type": "array"
+    }
+  },
+  "required": [
+    "original_run_id",
+    "replay_run_id",
+    "matched",
+    "comparisons"
+  ],
+  "title": "ReplayResult",
+  "type": "object"
+}

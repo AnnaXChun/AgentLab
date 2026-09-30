@@ -1,0 +1,68 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "action_event_id": {
+      "title": "Action Event Id",
+      "type": "string"
+    },
+    "stdout": {
+      "default": "",
+      "title": "Stdout",
+      "type": "string"
+    },
+    "stderr": {
+      "default": "",
+      "title": "Stderr",
+      "type": "string"
+    },
+    "structured_output": {
+      "additionalProperties": true,
+      "title": "Structured Output",
+      "type": "object"
+    },
+    "exit_code": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Exit Code"
+    },
+    "environment_diff": {
+      "additionalProperties": true,
+      "title": "Environment Diff",
+      "type": "object"
+    },
+    "created_artifacts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Created Artifacts",
+      "type": "array"
+    },
+    "timestamp": {
+      "format": "date-time",
+      "title": "Timestamp",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_event_id"
+  ],
+  "title": "ObservationEvent",
+  "type": "object"
+}

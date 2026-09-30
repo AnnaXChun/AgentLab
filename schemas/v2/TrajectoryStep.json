@@ -1,0 +1,382 @@
+{
+  "$defs": {
+    "ActionEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "step_id": {
+          "title": "Step Id",
+          "type": "string"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "expected_effect": {
+          "title": "Expected Effect",
+          "type": "string"
+        },
+        "agent_backend": {
+          "title": "Agent Backend",
+          "type": "string"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "context_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Context Refs",
+          "type": "array"
+        },
+        "reasoning_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Summary"
+        }
+      },
+      "required": [
+        "experiment_id",
+        "run_id",
+        "step_id",
+        "tool",
+        "operation",
+        "arguments",
+        "expected_effect",
+        "agent_backend"
+      ],
+      "title": "ActionEvent",
+      "type": "object"
+    },
+    "ObservationEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "action_event_id": {
+          "title": "Action Event Id",
+          "type": "string"
+        },
+        "stdout": {
+          "default": "",
+          "title": "Stdout",
+          "type": "string"
+        },
+        "stderr": {
+          "default": "",
+          "title": "Stderr",
+          "type": "string"
+        },
+        "structured_output": {
+          "additionalProperties": true,
+          "title": "Structured Output",
+          "type": "object"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "environment_diff": {
+          "additionalProperties": true,
+          "title": "Environment Diff",
+          "type": "object"
+        },
+        "created_artifacts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Created Artifacts",
+          "type": "array"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_event_id"
+      ],
+      "title": "ObservationEvent",
+      "type": "object"
+    },
+    "VerificationResult": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "verification_id": {
+          "title": "Verification Id",
+          "type": "string"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "verifier": {
+          "title": "Verifier",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PASSED",
+            "FAILED",
+            "INCONCLUSIVE",
+            "ERROR"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "source_artifact_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Artifact Ids",
+          "type": "array"
+        },
+        "source_observation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Observation Ids",
+          "type": "array"
+        },
+        "metric": {
+          "title": "Metric",
+          "type": "string"
+        },
+        "value": {
+          "default": null,
+          "title": "Value"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uncertainty"
+        },
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "experiment_id",
+        "run_id",
+        "verifier",
+        "status",
+        "source_artifact_ids",
+        "metric"
+      ],
+      "title": "VerificationResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "trajectory_id": {
+      "title": "Trajectory Id",
+      "type": "string"
+    },
+    "step_id": {
+      "title": "Step Id",
+      "type": "string"
+    },
+    "state_before": {
+      "additionalProperties": true,
+      "title": "State Before",
+      "type": "object"
+    },
+    "context_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Context Refs",
+      "type": "array"
+    },
+    "action": {
+      "$ref": "#/$defs/ActionEvent"
+    },
+    "observation": {
+      "$ref": "#/$defs/ObservationEvent"
+    },
+    "artifact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Ids",
+      "type": "array"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "state_after": {
+      "additionalProperties": true,
+      "title": "State After",
+      "type": "object"
+    },
+    "verifier_feedback": {
+      "items": {
+        "$ref": "#/$defs/VerificationResult"
+      },
+      "title": "Verifier Feedback",
+      "type": "array"
+    },
+    "reward_signals": {
+      "additionalProperties": true,
+      "title": "Reward Signals",
+      "type": "object"
+    },
+    "latency": {
+      "title": "Latency",
+      "type": "number"
+    },
+    "token_usage": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Token Usage"
+    },
+    "compute_usage": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Compute Usage"
+    },
+    "monetary_cost": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Monetary Cost"
+    },
+    "parent_step_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Step Id"
+    },
+    "branch_id": {
+      "title": "Branch Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trajectory_id",
+    "state_before",
+    "action",
+    "observation",
+    "state_after",
+    "latency",
+    "branch_id"
+  ],
+  "title": "TrajectoryStep",
+  "type": "object"
+}

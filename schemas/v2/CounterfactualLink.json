@@ -1,0 +1,71 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "link_id": {
+      "title": "Link Id",
+      "type": "string"
+    },
+    "original_step_id": {
+      "title": "Original Step Id",
+      "type": "string"
+    },
+    "counterfactual_step_id": {
+      "title": "Counterfactual Step Id",
+      "type": "string"
+    },
+    "intervention_type": {
+      "enum": [
+        "context_remove",
+        "context_mask",
+        "artifact_remove",
+        "tool_result_replace",
+        "action_replace",
+        "state_restore"
+      ],
+      "title": "Intervention Type",
+      "type": "string"
+    },
+    "removed_context_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Removed Context Refs",
+      "type": "array"
+    },
+    "modified_context_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Modified Context Refs",
+      "type": "array"
+    },
+    "original_outcome": {
+      "additionalProperties": true,
+      "title": "Original Outcome",
+      "type": "object"
+    },
+    "counterfactual_outcome": {
+      "additionalProperties": true,
+      "title": "Counterfactual Outcome",
+      "type": "object"
+    },
+    "outcome_delta": {
+      "additionalProperties": true,
+      "title": "Outcome Delta",
+      "type": "object"
+    }
+  },
+  "required": [
+    "original_step_id",
+    "counterfactual_step_id",
+    "intervention_type"
+  ],
+  "title": "CounterfactualLink",
+  "type": "object"
+}

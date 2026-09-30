@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_event_id": {
+      "title": "Source Event Id",
+      "type": "string"
+    },
+    "target_event_id": {
+      "title": "Target Event Id",
+      "type": "string"
+    },
+    "relation": {
+      "enum": [
+        "next",
+        "fork",
+        "retry",
+        "rollback",
+        "derived_from",
+        "verified_by"
+      ],
+      "title": "Relation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_event_id",
+    "target_event_id",
+    "relation"
+  ],
+  "title": "EventEdge",
+  "type": "object"
+}

@@ -1,0 +1,92 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "artifact_id": {
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "source_code",
+        "config",
+        "dataset_reference",
+        "checkpoint",
+        "log",
+        "metric",
+        "table",
+        "plot",
+        "report",
+        "generated_file"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "uri": {
+      "title": "Uri",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size": {
+      "minimum": 0,
+      "title": "Size",
+      "type": "integer"
+    },
+    "mime_type": {
+      "title": "Mime Type",
+      "type": "string"
+    },
+    "parent_artifact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Parent Artifact Ids",
+      "type": "array"
+    },
+    "producer_run_id": {
+      "title": "Producer Run Id",
+      "type": "string"
+    },
+    "producer_step_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Producer Step Id"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "uri",
+    "sha256",
+    "size",
+    "mime_type",
+    "producer_run_id"
+  ],
+  "title": "Artifact",
+  "type": "object"
+}

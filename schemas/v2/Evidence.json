@@ -1,0 +1,101 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "evidence_id": {
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "hypothesis_id": {
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "source_artifact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Artifact Ids",
+      "type": "array"
+    },
+    "source_run_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Run Ids",
+      "type": "array"
+    },
+    "source_observation_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Observation Ids",
+      "type": "array"
+    },
+    "metric": {
+      "title": "Metric",
+      "type": "string"
+    },
+    "value": {
+      "title": "Value"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Uncertainty"
+    },
+    "verifier": {
+      "title": "Verifier",
+      "type": "string"
+    },
+    "verification_id": {
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "verification_status": {
+      "enum": [
+        "PASSED",
+        "FAILED",
+        "INCONCLUSIVE",
+        "ERROR"
+      ],
+      "title": "Verification Status",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "hypothesis_id",
+    "source_artifact_ids",
+    "source_run_ids",
+    "metric",
+    "value",
+    "verifier",
+    "verification_id",
+    "verification_status"
+  ],
+  "title": "Evidence",
+  "type": "object"
+}

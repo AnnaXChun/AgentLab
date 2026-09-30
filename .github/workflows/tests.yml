@@ -1,0 +1,16 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.12.21'
+      - run: uv sync --python 3.12
+      - run: docker compose up -d --build --wait
+      - run: HARNESS_INTEGRATION=1 uv run pytest -q
+      - run: uv run ruff check . && uv run ruff format --check .
+      - if: always()
+        run: docker compose down

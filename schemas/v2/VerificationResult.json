@@ -1,0 +1,91 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "verification_id": {
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "verifier": {
+      "title": "Verifier",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "PASSED",
+        "FAILED",
+        "INCONCLUSIVE",
+        "ERROR"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "source_artifact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Artifact Ids",
+      "type": "array"
+    },
+    "source_observation_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Observation Ids",
+      "type": "array"
+    },
+    "metric": {
+      "title": "Metric",
+      "type": "string"
+    },
+    "value": {
+      "default": null,
+      "title": "Value"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Uncertainty"
+    },
+    "details": {
+      "additionalProperties": true,
+      "title": "Details",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "run_id",
+    "verifier",
+    "status",
+    "source_artifact_ids",
+    "metric"
+  ],
+  "title": "VerificationResult",
+  "type": "object"
+}

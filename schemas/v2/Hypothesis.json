@@ -1,0 +1,68 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "hypothesis_id": {
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "statement": {
+      "minLength": 1,
+      "title": "Statement",
+      "type": "string"
+    },
+    "rationale": {
+      "default": "",
+      "title": "Rationale",
+      "type": "string"
+    },
+    "assumptions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "expected_observation": {
+      "additionalProperties": true,
+      "title": "Expected Observation",
+      "type": "object"
+    },
+    "status": {
+      "default": "PROPOSED",
+      "enum": [
+        "PROPOSED",
+        "TESTED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "parent_hypothesis_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Hypothesis Id"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "statement"
+  ],
+  "title": "Hypothesis",
+  "type": "object"
+}

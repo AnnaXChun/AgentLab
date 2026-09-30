@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "EnvironmentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "backend": {
+          "default": "docker",
+          "minLength": 1,
+          "title": "Backend",
+          "type": "string"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "python:3.12-slim",
+          "title": "Image"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "cpu": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Cpu",
+          "type": "number"
+        },
+        "memory_gb": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Memory Gb",
+          "type": "number"
+        },
+        "dependencies": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Dependencies",
+          "type": "object"
+        },
+        "network": {
+          "const": "disabled",
+          "default": "disabled",
+          "title": "Network",
+          "type": "string"
+        }
+      },
+      "title": "EnvironmentSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "tools": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Tools",
+      "type": "array"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentSpec"
+    },
+    "artifact_types": {
+      "items": {
+        "enum": [
+          "source_code",
+          "config",
+          "dataset_reference",
+          "checkpoint",
+          "log",
+          "metric",
+          "table",
+          "plot",
+          "report",
+          "generated_file"
+        ],
+        "type": "string"
+      },
+      "title": "Artifact Types",
+      "type": "array"
+    },
+    "verifier": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Verifier",
+      "type": "array"
+    },
+    "templates": {
+      "additionalProperties": true,
+      "title": "Templates",
+      "type": "object"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "title": "DomainPack",
+  "type": "object"
+}

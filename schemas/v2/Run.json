@@ -1,0 +1,198 @@
+{
+  "$defs": {
+    "EnvironmentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "backend": {
+          "default": "docker",
+          "minLength": 1,
+          "title": "Backend",
+          "type": "string"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "python:3.12-slim",
+          "title": "Image"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "cpu": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Cpu",
+          "type": "number"
+        },
+        "memory_gb": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Memory Gb",
+          "type": "number"
+        },
+        "dependencies": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Dependencies",
+          "type": "object"
+        },
+        "network": {
+          "const": "disabled",
+          "default": "disabled",
+          "title": "Network",
+          "type": "string"
+        }
+      },
+      "title": "EnvironmentSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Hypothesis Ids",
+      "type": "array"
+    },
+    "environment_snapshot_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Environment Snapshot Id"
+    },
+    "environment_handle": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Environment Handle"
+    },
+    "environment_spec": {
+      "$ref": "#/$defs/EnvironmentSpec"
+    },
+    "code_version": {
+      "title": "Code Version",
+      "type": "string"
+    },
+    "config": {
+      "additionalProperties": true,
+      "title": "Config",
+      "type": "object"
+    },
+    "seed": {
+      "default": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "resource_spec": {
+      "additionalProperties": true,
+      "title": "Resource Spec",
+      "type": "object"
+    },
+    "status": {
+      "default": "RUNNING",
+      "enum": [
+        "RUNNING",
+        "COMPLETED",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "finished_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Finished At"
+    },
+    "parent_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Run Id"
+    },
+    "parent_step_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Step Id"
+    },
+    "trajectory_id": {
+      "title": "Trajectory Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "environment_spec",
+    "code_version"
+  ],
+  "title": "Run",
+  "type": "object"
+}

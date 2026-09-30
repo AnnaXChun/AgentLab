@@ -1,0 +1,239 @@
+{
+  "$defs": {
+    "EventType": {
+      "enum": [
+        "experiment.created",
+        "experiment.updated",
+        "hypothesis.registered",
+        "run.started",
+        "run.finished",
+        "action.requested",
+        "observation.recorded",
+        "trajectory.recorded",
+        "object.recorded",
+        "environment.operation",
+        "evidence.generated",
+        "claim.assessed",
+        "counterfactual.linked",
+        "replay.result",
+        "episode.started",
+        "episode.completed",
+        "episode.failed",
+        "agent.message",
+        "agent.action",
+        "retrieval.ingest",
+        "retrieval.ingested",
+        "retrieval.query",
+        "retrieval.result",
+        "tool.call",
+        "tool.result",
+        "sandbox.command",
+        "sandbox.result",
+        "artifact.created",
+        "claim.created",
+        "claim.updated",
+        "verification.started",
+        "verification.result",
+        "checkpoint.created",
+        "branch.created",
+        "rollback.created",
+        "budget.updated",
+        "export.started",
+        "export.completed"
+      ],
+      "title": "EventType",
+      "type": "string"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "wall_time_ms": {
+          "default": 0,
+          "title": "Wall Time Ms",
+          "type": "number"
+        },
+        "cpu_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Seconds"
+        },
+        "gpu_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gpu Seconds"
+        },
+        "tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tokens"
+        },
+        "estimated_cost_usd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Cost Usd"
+        }
+      },
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "episode_id": {
+      "title": "Episode Id",
+      "type": "string"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "sequence": {
+      "default": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "timestamp": {
+      "format": "date-time",
+      "title": "Timestamp",
+      "type": "string"
+    },
+    "trace_id": {
+      "default": "",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "span_id": {
+      "default": "",
+      "title": "Span Id",
+      "type": "string"
+    },
+    "branch_id": {
+      "title": "Branch Id",
+      "type": "string"
+    },
+    "parent_event_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Event Id"
+    },
+    "actor_type": {
+      "default": "harness",
+      "title": "Actor Type",
+      "type": "string"
+    },
+    "actor_id": {
+      "default": "scientific-harness",
+      "title": "Actor Id",
+      "type": "string"
+    },
+    "event_type": {
+      "$ref": "#/$defs/EventType"
+    },
+    "input": {
+      "additionalProperties": true,
+      "title": "Input",
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": true,
+      "title": "Output",
+      "type": "object"
+    },
+    "artifact_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Refs",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "state_before_hash": {
+      "default": "",
+      "title": "State Before Hash",
+      "type": "string"
+    },
+    "state_after_hash": {
+      "default": "",
+      "title": "State After Hash",
+      "type": "string"
+    },
+    "status": {
+      "default": "SUCCESS",
+      "enum": [
+        "PENDING",
+        "SUCCESS",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "episode_id",
+    "branch_id",
+    "event_type"
+  ],
+  "title": "Event",
+  "type": "object"
+}

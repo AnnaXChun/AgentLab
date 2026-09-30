@@ -1,0 +1,36 @@
+schema_version: '1.0'
+api_version: sciharness/v1
+kind: DomainPack
+metadata:
+  name: demo
+  version: 0.1.0
+environment:
+  image: python:3.12-slim
+mcp_servers:
+  - name: demo-tools
+    transport: stdio
+    command: $PYTHON
+    args: ['-m', 'domain_packs.demo.server']
+    tool_schemas:
+      load_dataset:
+        type: object
+        properties:
+          candidate: {type: string}
+        required: [candidate]
+        additionalProperties: false
+      run_mock_simulation:
+        type: object
+        properties:
+          candidate: {type: string}
+          seed: {type: integer}
+        required: [candidate]
+        additionalProperties: false
+retrieval:
+  sources: [local_docs]
+  documents: [reference.md]
+validators: [numeric, execution, schema]
+resources:
+  cpu: 1
+  memory_gb: 1
+network:
+  policy: disabled

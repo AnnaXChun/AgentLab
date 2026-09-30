@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "episode_id": "4f148354-4db9-4340-8a2e-49d7f999f856",
+  "event_id": "df693287-f29b-432d-8928-1474719d0e44",
+  "sequence": 25,
+  "timestamp": "2026-09-30T06:43:31.169470Z",
+  "trace_id": "e05860a6f5060c9316001edcdab769eb",
+  "span_id": "6733ccdaab707408",
+  "branch_id": "74a84daa-087e-4401-ac68-410f8f3740b4",
+  "parent_event_id": "d49ec2b6-e30f-4904-96b7-8ef0cf812889",
+  "actor_type": "harness",
+  "actor_id": "scientific-harness",
+  "event_type": "sandbox.result",
+  "input": {
+    "request_event_id": "d49ec2b6-e30f-4904-96b7-8ef0cf812889"
+  },
+  "output": {
+    "files": {
+      "result.json": "sha256:6045b051265b7063147064437479e9259d624f474a3c0eb7a82c6560f3971195"
+    },
+    "stderr": "",
+    "stdout": "",
+    "exit_code": 0,
+    "timed_out": false,
+    "environment": {
+      "image": "python:3.12-slim",
+      "runtime": "docker",
+      "image_id": "sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+      "platform": "arm64"
+    },
+    "schema_version": "1.0",
+    "input_artifacts": {
+      "experiment.py": "sha256:64271fdf197e07f235641c974e8cd8c3e5d2f93afefe1dc8378b42da6dd5ef99"
+    },
+    "stderr_truncated": false,
+    "stdout_truncated": false
+  },
+  "artifact_refs": [
+    "sha256:6045b051265b7063147064437479e9259d624f474a3c0eb7a82c6560f3971195",
+    "sha256:64271fdf197e07f235641c974e8cd8c3e5d2f93afefe1dc8378b42da6dd5ef99"
+  ],
+  "evidence_refs": [],
+  "state_before_hash": "f578cfe64a6e8a2f7e3668f087a53b589cf267bfb9b8142627eeee961820eba0",
+  "state_after_hash": "a3033e2820d405316bda142a4709dcdde179bd39f00fcbd92ec1c78be5927cec",
+  "status": "SUCCESS",
+  "usage": {
+    "schema_version": "1.0",
+    "wall_time_ms": 372.5622709998788,
+    "cpu_seconds": null,
+    "gpu_seconds": null,
+    "tokens": null,
+    "estimated_cost_usd": null
+  },
+  "metadata": {}
+}

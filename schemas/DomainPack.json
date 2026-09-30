@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "api_version": {
+      "const": "sciharness/v1",
+      "default": "sciharness/v1",
+      "title": "Api Version",
+      "type": "string"
+    },
+    "kind": {
+      "const": "DomainPack",
+      "default": "DomainPack",
+      "title": "Kind",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Metadata",
+      "type": "object"
+    },
+    "environment": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Environment",
+      "type": "object"
+    },
+    "mcp_servers": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Mcp Servers",
+      "type": "array"
+    },
+    "retrieval": {
+      "additionalProperties": true,
+      "title": "Retrieval",
+      "type": "object"
+    },
+    "validators": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Validators",
+      "type": "array"
+    },
+    "resources": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Resources",
+      "type": "object"
+    },
+    "network": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Network",
+      "type": "object"
+    }
+  },
+  "required": [
+    "metadata",
+    "environment",
+    "mcp_servers",
+    "retrieval",
+    "validators",
+    "resources",
+    "network"
+  ],
+  "title": "DomainPack",
+  "type": "object"
+}

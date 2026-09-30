@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool": {
+      "enum": [
+        "environment",
+        "mcp",
+        "rag"
+      ],
+      "title": "Tool",
+      "type": "string"
+    },
+    "operation": {
+      "title": "Operation",
+      "type": "string"
+    },
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
+    },
+    "expected_effect": {
+      "default": "",
+      "title": "Expected Effect",
+      "type": "string"
+    },
+    "context_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Context Refs",
+      "type": "array"
+    },
+    "reasoning_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reasoning Summary"
+    }
+  },
+  "required": [
+    "tool",
+    "operation"
+  ],
+  "title": "Action",
+  "type": "object"
+}

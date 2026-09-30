@@ -1,0 +1,71 @@
+{
+  "$defs": {
+    "ClaimStatus": {
+      "enum": [
+        "UNVERIFIED",
+        "SUPPORTED",
+        "VERIFIED",
+        "CONTRADICTED"
+      ],
+      "title": "ClaimStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "claim_id": {
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "episode_id": {
+      "title": "Episode Id",
+      "type": "string"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ClaimStatus",
+      "default": "UNVERIFIED"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "artifact_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Refs",
+      "type": "array"
+    },
+    "verification_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Verification Refs",
+      "type": "array"
+    },
+    "created_by_event_id": {
+      "title": "Created By Event Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "episode_id",
+    "text",
+    "created_by_event_id"
+  ],
+  "title": "Claim",
+  "type": "object"
+}

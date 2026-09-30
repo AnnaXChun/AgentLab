@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "EnvironmentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "backend": {
+          "default": "docker",
+          "minLength": 1,
+          "title": "Backend",
+          "type": "string"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "python:3.12-slim",
+          "title": "Image"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "cpu": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Cpu",
+          "type": "number"
+        },
+        "memory_gb": {
+          "default": 1,
+          "exclusiveMinimum": 0,
+          "title": "Memory Gb",
+          "type": "number"
+        },
+        "dependencies": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Dependencies",
+          "type": "object"
+        },
+        "network": {
+          "const": "disabled",
+          "default": "disabled",
+          "title": "Network",
+          "type": "string"
+        }
+      },
+      "title": "EnvironmentSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "goal": {
+      "maxLength": 8000,
+      "minLength": 1,
+      "title": "Goal",
+      "type": "string"
+    },
+    "hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Hypothesis Ids",
+      "type": "array"
+    },
+    "status": {
+      "default": "CREATED",
+      "enum": [
+        "CREATED",
+        "RUNNING",
+        "COMPLETED",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "constraints": {
+      "additionalProperties": true,
+      "title": "Constraints",
+      "type": "object"
+    },
+    "success_criteria": {
+      "additionalProperties": true,
+      "title": "Success Criteria",
+      "type": "object"
+    },
+    "budget": {
+      "additionalProperties": true,
+      "title": "Budget",
+      "type": "object"
+    },
+    "environment_spec": {
+      "$ref": "#/$defs/EnvironmentSpec"
+    },
+    "agent_backend": {
+      "default": "external",
+      "title": "Agent Backend",
+      "type": "string"
+    },
+    "parent_experiment_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Experiment Id"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "finished_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Finished At"
+    }
+  },
+  "required": [
+    "goal"
+  ],
+  "title": "Experiment",
+  "type": "object"
+}
