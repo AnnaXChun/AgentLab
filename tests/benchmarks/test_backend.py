@@ -5,6 +5,7 @@ import pytest
 
 from experiment_infra.agents.openai_compatible import (
     AgentFormatError,
+    AgentOutput,
     ContextBudgetExceeded,
     OpenAICompatibleAgentBackend,
 )
@@ -19,6 +20,12 @@ def payload(**updates):
         "rationale_summary": "Run the saved program",
         **updates,
     }
+
+
+def test_rationale_summary_is_optional():
+    value = payload()
+    del value["rationale_summary"]
+    assert AgentOutput.model_validate(value).action(0).reasoning_summary is None
 
 
 @pytest.mark.parametrize(
@@ -106,3 +113,27 @@ async def test_refusal_truncation(finish, refusal):
         )
         with pytest.raises(AgentFormatError):
             await agent.next_action({})
+
+
+async def test_loopback_model_needs_no_api_key(monkeypatch):
+    monkeypatch.delenv("MODEL_API_KEY", raising=False)
+
+    def reply(request):
+        assert "authorization" not in request.headers
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {"finish_reason": "stop", "message": {"content": json.dumps(payload())}}
+                ]
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(reply)) as client:
+        agent = OpenAICompatibleAgentBackend(
+            base_url="http://127.0.0.1:8081/v1", model="local", client=client
+        )
+        assert (await agent.next_action({})).operation == "exec"
+        for host in ("https://remote.invalid/v1", "http://localhost.remote.invalid/v1"):
+            with pytest.raises(ValueError, match="MODEL_API_KEY"):
+                OpenAICompatibleAgentBackend(base_url=host, model="remote", client=client)

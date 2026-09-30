@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scientific-harness"
-version = "0.3.0"
+version = "0.3.1"
 description = "Persistent execution, evidence and data infrastructure for external agents"
 requires-python = ">=3.12"
 license = "Apache-2.0"

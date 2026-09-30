@@ -11,6 +11,8 @@ See [benchmark setup and protocols](docs/benchmarks.md) and
 Environment calibration is separate from real-model baseline measurement.
 See the [0.3 delivery report](docs/benchmark_delivery.md) for installed environments,
 measured calibration results, replay checks and current limits.
+Version 0.3.1 adds [local Qwen3-1.7B on Apple Silicon](docs/local_qwen.md),
+with pinned MLX setup and no cloud API key required for loopback inference.
 
 ```python
 state = await runtime.get_state(experiment_id, run_id)

@@ -4,6 +4,7 @@ import json
 import os
 from time import perf_counter
 from typing import Literal
+from urllib.parse import urlparse
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -26,7 +27,7 @@ class AgentOutput(BaseModel):
     operation: Literal["exec", "finish"]
     arguments: dict
     expected_effect: str = Field(max_length=1000)
-    rationale_summary: str | None = Field(max_length=1000)
+    rationale_summary: str | None = Field(default=None, max_length=1000)
 
     def action(self, seed):
         if self.operation == "finish":
@@ -50,7 +51,8 @@ class AgentOutput(BaseModel):
 class OpenAICompatibleAgentBackend:
     """Chat Completions JSON mode plus mandatory local schema validation.
 
-    Compatible servers need JSON-object mode, not provider-specific structured outputs.
+    Requests JSON-object mode; servers such as MLX may ignore the format hint.
+    Local schema validation remains mandatory regardless of server capabilities.
     `state` contains task/policy/context/tools supplied by the external batch driver.
     """
 
@@ -70,7 +72,8 @@ class OpenAICompatibleAgentBackend:
         self.base_url = base_url or os.getenv("MODEL_BASE_URL")
         self.api_key = api_key or os.getenv("MODEL_API_KEY")
         self.model = model or os.getenv("MODEL_NAME")
-        if not all((self.base_url, self.api_key, self.model)):
+        local = urlparse(self.base_url or "").hostname in {"localhost", "127.0.0.1", "::1"}
+        if not self.base_url or not self.model or (not self.api_key and not local):
             raise ValueError("Set MODEL_BASE_URL, MODEL_API_KEY and MODEL_NAME")
         if temperature < 0 or context_limit < 1 or max_tokens < 1:
             raise ValueError("Invalid model limits")
@@ -94,6 +97,9 @@ class OpenAICompatibleAgentBackend:
             "writing files before execution, collect list for output artifacts, and "
             "timeout_seconds (1..300). Use finish with empty arguments when done. "
             "Never call evaluators or access hidden evaluation data.\n"
+            'The top-level tool is always "environment"; operation is "exec" or "finish". '
+            'An exec action has arguments={"command":{"argv":[...]}}. '
+            "Do not put the native tool name in the top-level tool field.\n"
             + json.dumps(AgentOutput.model_json_schema())
             + "\nCommand schema: "
             + json.dumps(Command.model_json_schema())
@@ -116,7 +122,7 @@ class OpenAICompatibleAgentBackend:
         try:
             response = await self.client.post(
                 self.base_url.rstrip("/") + "/chat/completions",
-                headers={"Authorization": "Bearer " + self.api_key},
+                headers={"Authorization": "Bearer " + self.api_key} if self.api_key else {},
                 json={
                     "model": self.model,
                     "messages": messages,

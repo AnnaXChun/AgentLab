@@ -9,6 +9,7 @@ outputs/
 
 .DS_Store
 .benchmarks/
+.local-model/
 results/
 .env.*
 !.env.example

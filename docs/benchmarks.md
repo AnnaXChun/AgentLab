@@ -36,7 +36,7 @@ python -m experiment_infra.benchmarks.run --benchmark tau2 --limit 5 --check-env
 python -m experiment_infra.benchmarks.run --benchmark scienceagentbench --limit 5 --check-environment
 ```
 
-After setting MODEL_BASE_URL, MODEL_API_KEY and MODEL_NAME in the shell:
+After setting MODEL_BASE_URL, MODEL_API_KEY and MODEL_NAME in the shell (MODEL_API_KEY is optional for loopback endpoints; see [local Qwen setup](local_qwen.md)):
 
 ```bash
 python -m experiment_infra.benchmarks.run --benchmark scienceagentbench --limit 5
