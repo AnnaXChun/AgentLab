@@ -14,6 +14,9 @@ measured calibration results, replay checks and current limits.
 Version 0.3.2 adds native tool schemas, constrained local Qwen decoding and exact
 prompt artifacts. [Local Qwen3-1.7B](docs/local_qwen.md) has a verified tau2 success
 with native reward 1 and matching replay; see the [adaptation report](docs/qwen_adaptation.md).
+Version 0.3.3 adds success-only trajectory delivery and an offline reader. The
+[full telecom-solo base evaluation](docs/qwen_full_benchmark.md) passed 13 of
+114 tasks (11.40%); all 13 successful trajectories passed replay and integrity checks.
 
 ```python
 state = await runtime.get_state(experiment_id, run_id)

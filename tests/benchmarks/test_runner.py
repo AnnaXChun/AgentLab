@@ -255,3 +255,34 @@ async def test_success_only_exports_keep_denominator_and_resume(store, artifacts
     again = await driver.run(adapter.list_tasks("test"), resume=True)
     assert [r["run_id"] for r in again] == [r["run_id"] for r in rows]
     assert all("export_directory" not in r for r in again[1:])
+
+
+def test_reader_includes_finish_and_escapes_model_text(tmp_path):
+    from experiment_infra.benchmarks.view_successes import build_reader
+
+    bundle = tmp_path / "exports" / "successful"
+    bundle.mkdir(parents=True)
+    (bundle / "trajectory.jsonl").write_text(
+        json.dumps({"trajectory_id": "trace", "steps": []}) + "\n"
+    )
+    (bundle / "artifacts.jsonl").write_text("")
+    (tmp_path / "tasks").mkdir()
+    row = {
+        "status": "complete",
+        "success": True,
+        "export_directory": str(bundle),
+        "trajectory_id": "trace",
+        "task_id": "<script>untrusted</script>",
+        "run_id": "run",
+        "benchmark": "test",
+        "steps": 0,
+        "native_result": {"score": 1},
+        "model_calls": [{"action": {"operation": "finish"}, "usage": {"total_tokens": 42}}],
+    }
+    (tmp_path / "tasks/pass.json").write_text(json.dumps(row))
+    (tmp_path / "tasks/fail.json").write_text(json.dumps({"status": "complete", "success": False}))
+    index = build_reader(tmp_path)
+    assert len(index) == 1
+    rendered = (tmp_path / "successes/run.html").read_text()
+    assert "finish" in rendered and "total_tokens" in rendered
+    assert "<script>" not in rendered and "&lt;script&gt;" in rendered

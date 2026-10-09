@@ -82,11 +82,18 @@ def build_reader(directory):
             digest = artifacts[aid]["sha256"]
             request = json.loads((bundle / "artifacts/sha256" / digest[:2] / digest).read_text())
             body += block(f"模型调用 {i}：完整请求", request)
+        body += "<h2>模型返回（含结束决策、token 用量和诊断）</h2>"
+        for i, call in enumerate(row.get("model_calls", []), 1):
+            body += block(f"模型调用 {i}：完整返回记录", call)
         body += "<h2>完整执行步骤</h2>"
         for i, step in enumerate(original["steps"], 1):
             action = step["action"]
             command = action.get("arguments", {}).get("command", {}).get("argv", [])
             label = command[1] if len(command) > 1 and command[0] == "tau2" else action["operation"]
+            if action["tool"] == "mcp" and action.get("arguments", {}).get("tool_name") == (
+                "benchmark.native_evaluate"
+            ):
+                label = "官方评测（由驱动发起）"
             body += f"<h3>步骤 {i} · {html.escape(label)}</h3>"
             body += block("动作", action, True)
             body += block("工具返回", step["observation"], True)
@@ -111,6 +118,10 @@ def build_reader(directory):
         else {}
     )
     body = '<h1>成功任务完整轨迹</h1><p class="note">仅展示官方评测成功的任务。失败任务仍计入整体成功率；原始数据包保存完整日志、状态快照、模型请求与证据。没有保存模型私有思维过程。</p>'
+    body += (
+        f"<p>已完成 {summary.get('tasks_attempted', 0)} 题，"
+        f"成功 {len(index)} 题，成功率 {summary.get('success_rate', 0):.2%}。</p>"
+    )
     body += block("全量评测进度与统计", summary, True) + "<ul>" + "".join(links) + "</ul>"
     (destination / "index.html").write_text(page("成功任务完整轨迹", body))
     (destination / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n")
