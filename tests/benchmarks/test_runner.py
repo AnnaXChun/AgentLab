@@ -232,3 +232,26 @@ async def test_budget_and_usage(store, artifacts, tmp_path):
     rows = await driver.run(adapter.list_tasks("test")[2:])
     assert rows[0]["failure"]["failure_type"] == "BUDGET_EXCEEDED"
     assert rows[0]["total_tokens"] is None
+
+
+async def test_success_only_exports_keep_denominator_and_resume(store, artifacts, tmp_path):
+    driver, adapter = runner(store, artifacts, tmp_path)
+    driver.export_success_only = True
+    driver.metadata["export_success_only"] = True
+    rows = await driver.run(adapter.list_tasks("test"))
+    assert [r["success"] for r in rows] == [True, False, False]
+    assert rows[0]["export_directory"]
+    assert rows[0]["replay"]["matched"]
+    for row in rows[1:]:
+        assert "export_directory" not in row and "replay" not in row
+        assert "model_calls" not in row and "state_before_action" not in row
+        assert "failed_action" not in row["failure"]
+        assert not (tmp_path / "exports" / row["experiment_id"]).exists()
+    trajectories = [json.loads(s) for s in (tmp_path / "trajectory.jsonl").read_text().splitlines()]
+    assert all(t["experiment_id"] == rows[0]["experiment_id"] for t in trajectories)
+    summary = json.loads((tmp_path / "benchmark_summary.json").read_text())
+    assert summary["tasks_attempted"] == 3 and summary["tasks_successful"] == 1
+    assert sum(summary["failure_types"].values()) == 2
+    again = await driver.run(adapter.list_tasks("test"), resume=True)
+    assert [r["run_id"] for r in again] == [r["run_id"] for r in rows]
+    assert all("export_directory" not in r for r in again[1:])

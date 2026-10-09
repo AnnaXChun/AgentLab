@@ -40,6 +40,11 @@ def parser():
     p.add_argument("--output-dir", type=Path, default=None)
     p.add_argument("--resume", action="store_true")
     p.add_argument(
+        "--export-success-only",
+        action="store_true",
+        help="Export/replay only successful trajectories; keep compact failure statistics",
+    )
+    p.add_argument(
         "--replay-samples", type=int, default=1, help="First N eligible successes and failures"
     )
     p.add_argument(
@@ -116,6 +121,7 @@ async def main(args):
             max_response_tokens=args.max_response_tokens,
             context_limit=args.context_limit,
             replay_samples=args.replay_samples,
+            export_success_only=args.export_success_only,
         )
         rows = await runner.run(tasks, resume=args.resume)
         if default_output:

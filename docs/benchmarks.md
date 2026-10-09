@@ -90,3 +90,33 @@ python -m experiment_infra.benchmarks.smoke --benchmark scienceagentbench \
 The first four tasks use official reference actions; the fifth deliberately finishes immediately. This verifies both native pass/fail paths. It is not a model success-rate measurement. ScienceAgentBench calibration analogously uses selected reference programs and a deliberately missing output. Preserve the exact IDs and runtime images in reports.
 
 The SAB native harness executes the submitted program again and uses its own hidden evaluation data. The bridge mounts native benchmark/scorer/prediction inputs read-only while keeping native result directories writable; scoring functions are unchanged. Task images are rebuilt for each submission. Run SAB evaluation batches sequentially because upstream image names are shared across batches. The agent container has no network and only sees the dataset mount. The official base image does not include every task-specific library; visual tasks requiring the official GPT judge are not enabled in this release. Workspace snapshots support less than 15 MB of regular files, excluding the dataset mount. Larger outputs require a later snapshot-storage extension.
+
+## Success-only delivery
+
+Use `--export-success-only` to export full canonical bundles and replay only successful tasks.
+Completed failed-task journals retain compact outcome, failure type, timing and token statistics;
+failed actions, prompts, observations and snapshots are omitted from delivery files. Failures
+remain in the success-rate denominator. The runtime's append-only internal audit ledger is
+unchanged; this option controls exports and does not erase historical runs.
+
+The batch updates `successes/index.html` after each task. Open it to browse each success's
+full model requests (system/user prompts and history), actions, tool results, before/after
+states, native evaluation and replay. Canonical JSONL and CAS bundles are linked alongside.
+Private model reasoning is not exported. To rebuild the offline reader independently:
+
+```bash
+python -m experiment_infra.benchmarks.view_successes results/YOUR_BATCH
+```
+
+Full pinned tau2 telecom-solo base split (114 tasks), using the validated local configuration:
+
+```bash
+source .env.local-qwen
+python -m experiment_infra.benchmarks.run \
+  --benchmark tau2 --limit 114 --max-steps 25 --max-response-tokens 4096 \
+  --temperature 0.6 --seed 0 --replay-samples 114 --export-success-only \
+  --output-dir results/qwen-full-tau2-20261009
+```
+
+This is a fixed-configuration development-set evaluation. Previously used debugging cases
+are included in the full split and are not held-out measurements.

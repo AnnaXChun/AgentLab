@@ -123,11 +123,13 @@ class BenchmarkRunner:
         max_response_tokens=2048,
         context_limit=120000,
         replay_samples=1,
+        export_success_only=False,
         run_kind="model_baseline",
     ):
         self.runtime, self.adapter, self.agent_factory = runtime, adapter, agent_factory
         self.output = Path(output_dir).resolve()
         self.seed, self.max_steps, self.replay_samples = seed, max_steps, replay_samples
+        self.export_success_only = export_success_only
         self.metadata = {
             "benchmark_name": adapter.name,
             "benchmark_version": adapter.version,
@@ -146,6 +148,8 @@ class BenchmarkRunner:
             "run_kind": run_kind,
             "protocol": getattr(adapter, "protocol", None),
         }
+        if export_success_only:
+            self.metadata["export_success_only"] = True
         self.sampled = Counter()
 
     async def run(self, tasks, *, resume=False):
@@ -199,6 +203,10 @@ class BenchmarkRunner:
                     row["status"] = "complete"
                     atomic_json(path, row)
                 rows.append(row)
+                if self.export_success_only and not row["success"]:
+                    row = self.compact_failure(row)
+                    rows[-1] = row
+                    atomic_json(path, row)
                 self.export_summary(rows)
             self.export_summary(rows)
             return rows
@@ -426,7 +434,11 @@ class BenchmarkRunner:
         if calls and all((c.get("usage") or {}).get("total_tokens") is not None for c in calls):
             row["total_tokens"] = sum(c["usage"]["total_tokens"] for c in calls)
         await self.finalize(row)
-        if row.get("replay_eligible") and self.sampled[row["success"]] < self.replay_samples:
+        if (
+            row.get("replay_eligible")
+            and (row["success"] or not self.export_success_only)
+            and self.sampled[row["success"]] < self.replay_samples
+        ):
             self.sampled[row["success"]] += 1
             await self.replay(task, row)
             await self.export_task(row)
@@ -548,8 +560,37 @@ class BenchmarkRunner:
             await rt.finish_experiment(row["experiment_id"])
 
     async def export_task(self, row):
+        if self.export_success_only and not row["success"]:
+            return
         exported = await self.runtime.export(row["experiment_id"], self.output / "exports")
         row["export_directory"] = exported["directory"]
+
+    def compact_failure(self, row):
+        """Keep denominator/diagnostics without copying failed trajectories into delivery files."""
+        detailed = {
+            "model_calls",
+            "model_step_ids",
+            "state_before_action",
+            "pending_action",
+            "request_refs",
+            "context_refs",
+            "export_directory",
+            "last_valid_snapshot",
+        }
+        result = {k: v for k, v in row.items() if k not in detailed}
+        if result.get("failure"):
+            result["failure"] = {
+                k: v
+                for k, v in result["failure"].items()
+                if k in {"failure_type", "failure_stage", "error_class"}
+            }
+        if result.get("native_result"):
+            result["native_result"] = {
+                k: v
+                for k, v in result["native_result"].items()
+                if k in {"benchmark", "version", "metric", "score", "success", "evaluator"}
+            }
+        return result
 
     def export_summary(self, rows):
         summary = summarize(rows)
@@ -589,3 +630,7 @@ class BenchmarkRunner:
                         ):
                             continue
                         stream.write(line + "\n")
+        if self.export_success_only:
+            from experiment_infra.benchmarks.view_successes import build_reader
+
+            build_reader(self.output)
