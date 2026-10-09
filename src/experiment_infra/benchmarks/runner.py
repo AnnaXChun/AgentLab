@@ -12,9 +12,13 @@ from time import perf_counter
 
 import httpx
 
-from experiment_infra.agents.openai_compatible import AgentFormatError, ContextBudgetExceeded
+from experiment_infra.agents.openai_compatible import (
+    AgentFormatError,
+    ContextBudgetExceeded,
+    OpenAICompatibleAgentBackend,
+)
 from experiment_infra.benchmarks.evaluation import EvaluationGateway, evaluate_and_record
-from experiment_infra.core.schema import Artifact, Evidence, Run, Trajectory
+from experiment_infra.core.schema import Artifact, DecisionContext, Evidence, Run, Trajectory
 from packages.core.models.schemas import EventType as T
 from packages.core.models.schemas import now
 
@@ -106,6 +110,68 @@ def summarize(rows):
         if replay
         else None,
     }
+
+
+def model_rl_rows(row, directory):
+    """Project canonical transitions onto the driver's model-action sequence.
+
+    Native evaluator actions stay in the canonical audit bundle. Their inputs
+    and episode boundaries are not policy states or model-sequence boundaries.
+    """
+    directory = Path(directory)
+    model_steps = set(row["model_step_ids"])
+    transitions = [
+        value
+        for line in (directory / "rl_transition.jsonl").read_text().splitlines()
+        if (value := json.loads(line))["step_id"] in model_steps
+    ]
+    contexts_path = directory / "decision_contexts.jsonl"
+    contexts = {}
+    if contexts_path.exists():
+        for line in contexts_path.read_text().splitlines():
+            context = DecisionContext.model_validate_json(line)
+            if context.run_id == row["run_id"]:
+                contexts[context.context_id] = context
+    context_ids = row.get("decision_context_ids", [])
+    following = dict(zip(context_ids, context_ids[1:]))
+    for index, value in enumerate(transitions):
+        next_context = contexts.get(following.get(value.get("decision_context_id")))
+        # A next input must have been captured after this exact action, not an
+        # evaluator or unrelated run, and is never reconstructed from execution.
+        if next_context and next_context.last_step_id != value["step_id"]:
+            next_context = None
+        boundary = row.get("status") == "complete" and index == len(transitions) - 1
+        value.update(
+            next_state=next_context.payload if next_context else None,
+            next_context_coverage=next_context.coverage if next_context else "unknown",
+            next_decision_context_id=next_context.context_id if next_context else None,
+            boundary_scope="model_action_sequence",
+            episode_boundary=boundary,
+            terminal=boundary,
+            terminated=False if not boundary else None,
+            truncated=False if not boundary else None,
+            termination_reason=None,
+        )
+        if boundary:
+            termination = row.get("termination")
+            execution = value["observation"].get("structured_output", {}).get("execution", {})
+            if isinstance(execution, dict) and execution.get("timed_out") is True:
+                value.update(
+                    terminated=False, truncated=True, termination_reason="execution_timeout"
+                )
+            elif termination == "max_steps":
+                value.update(terminated=False, truncated=True, termination_reason="step_budget")
+            elif (
+                termination == "agent_stop"
+                and (row.get("pending_action") or {}).get("operation") == "finish"
+                and next_context
+                and row["pending_action"].get("decision_context_id") == next_context.context_id
+            ):
+                # A deliberate policy finish does not establish a natural MDP terminal.
+                value["termination_reason"] = "agent_finish"
+            else:
+                value["termination_reason"] = termination or "unknown"
+        yield value
 
 
 class BenchmarkRunner:
@@ -255,6 +321,8 @@ class BenchmarkRunner:
             "model_step_ids": [],
             "total_tokens": None,
             "model_calls": [],
+            "decision_context_ids": [],
+            "pending_decision_context_id": None,
             "environment_fingerprint": None,
             "outputs_expected": 0,
             "outputs_stored": 0,
@@ -303,13 +371,40 @@ class BenchmarkRunner:
                     metadata={"role": "model_input"},
                     mime_type="application/json",
                 )
-                row.update(state_before_action=state, pending_action=None)
+                row.update(
+                    state_before_action=state,
+                    pending_action=None,
+                    pending_decision_context_id=None,
+                )
+                atomic_json(journal, row)
+                # Only the built-in backend guarantees that this prepared body
+                # is the complete request. Custom backends (including subclasses)
+                # may add hidden inputs, so capture their supplied state as unknown.
+                prepared_request = type(agent) is OpenAICompatibleAgentBackend
+                payload = agent.prepare_request(context) if prepared_request else context
+                decision_context = await rt.capture_decision_context(
+                    run.experiment_id,
+                    run.run_id,
+                    payload,
+                    coverage="complete" if prepared_request else "unknown",
+                    source_refs=[prompt.artifact_id],
+                )
+                row["decision_context_ids"].append(decision_context.context_id)
+                row.update(
+                    state_before_action=state,
+                    pending_action=None,
+                    pending_decision_context_id=decision_context.context_id,
+                )
                 atomic_json(journal, row)
                 try:
-                    action = await agent.next_action(context)
+                    if prepared_request:
+                        action = await agent.next_action_from_request(decision_context.payload)
+                    else:
+                        action = await agent.next_action(decision_context.payload)
                 finally:
                     call = getattr(agent, "last_call", None)
                     if call:
+                        call = {**call, "decision_context_id": decision_context.context_id}
                         row["model_calls"].append(call)
                         await rt._artifact(
                             run,
@@ -322,13 +417,16 @@ class BenchmarkRunner:
                     self.adapter.validate_action(task, action)
                 except Exception as exc:
                     raise AgentFormatError("Action violates available tool schema") from exc
+                action = action.model_copy(
+                    update={
+                        "context_refs": [*action.context_refs, prompt.artifact_id],
+                        "decision_context_id": decision_context.context_id,
+                    }
+                )
                 row["pending_action"] = action.model_dump(mode="json")
                 atomic_json(journal, row)
                 if action.operation == "finish":
                     break
-                action = action.model_copy(
-                    update={"context_refs": [*action.context_refs, prompt.artifact_id]}
-                )
                 stage = "execute"
                 step = await rt.execute(
                     run.experiment_id,
@@ -556,6 +654,11 @@ class BenchmarkRunner:
                 for row in rows:
                     directory = row.get("export_directory")
                     if not directory:
+                        continue
+                    if name == "rl_transition.jsonl":
+                        if self.metadata["run_kind"] != "environment_calibration":
+                            for value in model_rl_rows(row, directory):
+                                stream.write(json.dumps(value, ensure_ascii=False) + "\n")
                         continue
                     for line in (Path(directory) / name).read_text().splitlines():
                         value = json.loads(line)

@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import Field
 
 from experiment_infra.core import schema as m
+from experiment_infra.exporters.policy import ExportPolicy
 
 
 class CreateExperiment(m.Model):
@@ -16,6 +17,7 @@ class CreateExperiment(m.Model):
     success_criteria: dict[str, Any] = Field(default_factory=dict)
     budget: dict[str, Any] = Field(default_factory=dict)
     parent_experiment_id: str | None = None
+    criteria: list[m.SuccessCriterion] = Field(default_factory=list)
 
 
 class HypothesisRequest(m.Model):
@@ -24,6 +26,7 @@ class HypothesisRequest(m.Model):
     assumptions: list[str] = Field(default_factory=list)
     expected_observation: dict[str, Any] = Field(default_factory=dict)
     parent_hypothesis_id: str | None = None
+    criterion_ids: list[str] = Field(default_factory=list)
 
 
 class RunRequest(m.Model):
@@ -38,6 +41,8 @@ class ActionRequest(m.Model):
 
 
 class ClaimRequest(m.Model):
+    hypothesis_id: str | None = None
+    criterion_ids: list[str] | None = None
     statement: str
     evidence_ids: list[str] = Field(default_factory=list)
     confidence: float | None = Field(default=None, ge=0, le=1)
@@ -46,8 +51,16 @@ class ClaimRequest(m.Model):
 class VerifyRequest(m.Model):
     run_id: str
     hypothesis_id: str
-    verifier: Literal["metric", "test"]
+    verifier: str
+    criterion_id: str | None = None
     artifact_ids: list[str] = Field(min_length=1)
+
+
+class ContextRequest(m.Model):
+    run_id: str
+    payload: dict[str, Any]
+    coverage: Literal["complete", "partial", "unknown"] = "unknown"
+    source_refs: list[str] = Field(default_factory=list)
 
 
 class BranchRequest(m.Model):
@@ -56,6 +69,7 @@ class BranchRequest(m.Model):
 
 
 class ExportRequest(m.Model):
+    policy: ExportPolicy = Field(default_factory=ExportPolicy)
     experiment_id: str
 
 
@@ -92,6 +106,19 @@ def router():
     @routes.get("/experiments/{experiment_id}/state", response_model=Result)
     async def state(request: Request, experiment_id: str, run_id: str | None = None):
         return Result(data=await call(request, lambda rt: rt.get_state(experiment_id, run_id)))
+
+    @routes.get("/experiments/{experiment_id}/feedback", response_model=Result)
+    async def feedback(request: Request, experiment_id: str, run_id: str):
+        return Result(data=await call(request, lambda rt: rt.get_feedback(experiment_id, run_id)))
+
+    @routes.post("/experiments/{experiment_id}/decision-contexts", response_model=m.DecisionContext)
+    async def context(request: Request, experiment_id: str, body: ContextRequest):
+        return await call(
+            request,
+            lambda rt: rt.capture_decision_context(
+                experiment_id, **body.model_dump(exclude={"schema_version"})
+            ),
+        )
 
     @routes.post("/experiments/{experiment_id}/hypotheses", response_model=m.Hypothesis)
     async def hypothesis(request: Request, experiment_id: str, body: HypothesisRequest):
@@ -159,7 +186,9 @@ def router():
     async def export(request: Request, body: ExportRequest):
         destination = Path(os.getenv("EXPORT_ROOT", "outputs")) / "experiments"
         return Result(
-            data=await call(request, lambda rt: rt.export(body.experiment_id, destination))
+            data=await call(
+                request, lambda rt: rt.export(body.experiment_id, destination, policy=body.policy)
+            )
         )
 
     return routes

@@ -24,6 +24,14 @@ The runtime does not contain a planner, agent persona, task decomposition framew
 prompt framework or model training loop. Codex, Claude Code, GPT, Qwen and custom agents
 can submit actions over HTTP or the Python API.
 
+## Feedback-driven inputs and evaluation
+
+See [the feedback milestone contract](docs/feedback_milestone.md) for immutable
+DecisionContext capture, feedback-reactive external clients, criterion-bound claims,
+host evaluator trust boundaries, and leakage-aware SFT/RL exports. Coverage is
+client-attested, not proof of hidden model inputs. Legacy scripted actions remain
+supported; without captured inputs they are excluded from default SFT exports.
+
 ## Run the end-to-end experiment
 
 With Docker/Compose available:
@@ -73,8 +81,9 @@ Exports are in `outputs/experiments/<experiment-id>/<export-id>/`:
 trajectory.jsonl       One typed Trajectory per run, with canonical steps
 artifacts.jsonl        Immutable artifact version records
 evidence.jsonl         Verifier-generated experimental evidence
-sft.jsonl              state/context → action
-rl_transition.jsonl    state/action/observation/reward_signals/next_state
+sft.jsonl              captured decision input → action (complete contexts by default)
+rl_transition.jsonl    captured input/action/observation/rewards/next captured input
+decision_contexts.jsonl Immutable captured client inputs
 provenance.jsonl       Object graph
 events.jsonl           Full underlying append-only event envelopes
 manifest.json          File hashes, event cutoff/hash, artifact closure
@@ -121,7 +130,9 @@ UPDATE/DELETE/TRUNCATE on event history and indexes.
 run/step IDs. `Evidence` references immutable artifacts, runs, observations and an
 independent VerificationResult. A retrieval document chunk is context, never automatically
 verified experimental Evidence. New Claim statuses are SUPPORTED, REFUTED, INCONCLUSIVE
-and UNVERIFIED. Only verifier-generated Evidence can support or refute a Claim.
+and UNVERIFIED. Only verifier-generated Evidence can support or refute a Claim. Legacy free-text
+claims are labeled unbound_legacy; structured criteria enable explicit hypothesis,
+policy and evaluator-trust binding. Agent-produced metrics are not independent evaluation.
 
 ## API
 
@@ -226,8 +237,8 @@ reject writes to new experiment partitions. New work should use `/experiments`.
   use database row locks, but there are no distributed execution leases.
 - Exact replay executes recorded actions. It pins the initial image, architecture,
   Python, resources, config, seed and snapshot. It compares output hashes/exit codes
-  and normal stdout/stderr. Declared test-runner timing text is reported separately;
-  test outcome comparison uses exit code and collected artifacts.
+  and stdout/stderr. Declared tests normalize only elapsed seconds in standard
+  unittest stderr summaries; counts, verdicts and all other output must match.
 - External retrieval/tools and nondeterministic programs can differ on replay; the
   result reports mismatches. No promise of arbitrary hardware/physical-system replay.
 - Docker snapshots cover `/work`, not process memory, external services or databases.

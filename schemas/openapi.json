@@ -876,6 +876,109 @@
         }
       }
     },
+    "/experiments/{experiment_id}/feedback": {
+      "get": {
+        "tags": [
+          "Experiment infrastructure"
+        ],
+        "summary": "Feedback",
+        "operationId": "feedback_experiments__experiment_id__feedback_get",
+        "parameters": [
+          {
+            "name": "experiment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Experiment Id"
+            }
+          },
+          {
+            "name": "run_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/experiment_infra__runtime__api__Result"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/experiments/{experiment_id}/decision-contexts": {
+      "post": {
+        "tags": [
+          "Experiment infrastructure"
+        ],
+        "summary": "Context",
+        "operationId": "context_experiments__experiment_id__decision_contexts_post",
+        "parameters": [
+          {
+            "name": "experiment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Experiment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContextRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionContext"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/experiments/{experiment_id}/hypotheses": {
       "post": {
         "tags": [
@@ -1450,6 +1553,17 @@
             "title": "Schema Version",
             "default": "2.0"
           },
+          "decision_context_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Context Id"
+          },
           "tool": {
             "type": "string",
             "enum": [
@@ -1507,6 +1621,17 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "decision_context_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Context Id"
           },
           "event_id": {
             "type": "string",
@@ -1734,6 +1859,49 @@
         "type": "object",
         "title": "CompleteRequest"
       },
+      "ContextRequest": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "2.0",
+            "title": "Schema Version",
+            "default": "2.0"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial",
+              "unknown"
+            ],
+            "title": "Coverage",
+            "default": "unknown"
+          },
+          "source_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Refs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "payload"
+        ],
+        "title": "ContextRequest"
+      },
       "CreateEpisode": {
         "properties": {
           "schema_version": {
@@ -1813,6 +1981,13 @@
               }
             ],
             "title": "Parent Experiment Id"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/SuccessCriterion"
+            },
+            "type": "array",
+            "title": "Criteria"
           }
         },
         "additionalProperties": false,
@@ -1821,6 +1996,81 @@
           "goal"
         ],
         "title": "CreateExperiment"
+      },
+      "DecisionContext": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "2.0",
+            "title": "Schema Version",
+            "default": "2.0"
+          },
+          "context_id": {
+            "type": "string",
+            "title": "Context Id"
+          },
+          "experiment_id": {
+            "type": "string",
+            "title": "Experiment Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "payload_json": {
+            "type": "string",
+            "title": "Payload Json"
+          },
+          "payload_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Payload Sha256"
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial",
+              "unknown"
+            ],
+            "title": "Coverage",
+            "default": "unknown"
+          },
+          "source_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Refs",
+            "default": []
+          },
+          "last_step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Step Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "experiment_id",
+          "run_id",
+          "payload_json",
+          "payload_sha256"
+        ],
+        "title": "DecisionContext",
+        "description": "Immutable serialized input. Coverage is client-attested, not model-use proof."
       },
       "EnvironmentSpec": {
         "properties": {
@@ -2156,6 +2406,49 @@
             "title": "Schema Version",
             "default": "2.0"
           },
+          "criterion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criterion Id"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "policy_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Sha256"
+          },
+          "trust_level": {
+            "type": "string",
+            "enum": [
+              "agent_reported",
+              "runtime_observed",
+              "host_evaluated"
+            ],
+            "title": "Trust Level",
+            "default": "agent_reported"
+          },
           "evidence_id": {
             "type": "string",
             "title": "Evidence Id"
@@ -2297,6 +2590,13 @@
             "title": "Schema Version",
             "default": "2.0"
           },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/SuccessCriterion"
+            },
+            "type": "array",
+            "title": "Criteria"
+          },
           "experiment_id": {
             "type": "string",
             "title": "Experiment Id"
@@ -2384,6 +2684,53 @@
         ],
         "title": "Experiment"
       },
+      "ExportPolicy": {
+        "properties": {
+          "include_unknown_purpose": {
+            "type": "boolean",
+            "title": "Include Unknown Purpose",
+            "default": false
+          },
+          "include_exact_replays": {
+            "type": "boolean",
+            "title": "Include Exact Replays",
+            "default": false
+          },
+          "exact_replay_weight": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Exact Replay Weight",
+            "default": 0.1
+          },
+          "include_partial_context": {
+            "type": "boolean",
+            "title": "Include Partial Context",
+            "default": false
+          },
+          "include_unknown_context": {
+            "type": "boolean",
+            "title": "Include Unknown Context",
+            "default": false
+          },
+          "test_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Test Fraction",
+            "default": 0.2
+          },
+          "split_seed": {
+            "type": "string",
+            "title": "Split Seed",
+            "default": "experiment-infra-v2"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ExportPolicy",
+        "description": "Canonical exports are lossless; this policy applies only to training rows.\n\nReplays are audits rather than fresh agent decisions. Including them requires an\nexplicit opt-in and carries a visible weight. Incomplete SFT contexts likewise\nrequire opt-in; missing context is never reconstructed from execution state."
+      },
       "ExportRequest": {
         "properties": {
           "schema_version": {
@@ -2391,6 +2738,9 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/ExportPolicy"
           },
           "experiment_id": {
             "type": "string",
@@ -2424,6 +2774,13 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "criterion_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Criterion Ids"
           },
           "hypothesis_id": {
             "type": "string",
@@ -2523,6 +2880,13 @@
               }
             ],
             "title": "Parent Hypothesis Id"
+          },
+          "criterion_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Criterion Ids"
           }
         },
         "additionalProperties": false,
@@ -2728,6 +3092,17 @@
             "title": "Schema Version",
             "default": "2.0"
           },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "experiment",
+              "exact_replay",
+              "branch",
+              "unknown"
+            ],
+            "title": "Purpose",
+            "default": "unknown"
+          },
           "run_id": {
             "type": "string",
             "title": "Run Id"
@@ -2887,6 +3262,30 @@
         "type": "object",
         "title": "RunRequest"
       },
+      "SuccessCriterion": {
+        "properties": {
+          "criterion_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Criterion Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "policy": {
+            "$ref": "#/components/schemas/VerifierPolicy"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "criterion_id",
+          "policy"
+        ],
+        "title": "SuccessCriterion"
+      },
       "ToolRequest": {
         "properties": {
           "schema_version": {
@@ -2923,6 +3322,28 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "experiment",
+              "exact_replay",
+              "branch",
+              "unknown"
+            ],
+            "title": "Purpose",
+            "default": "unknown"
+          },
+          "lineage_root_experiment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lineage Root Experiment Id"
           },
           "trajectory_id": {
             "type": "string",
@@ -2989,6 +3410,16 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "decision_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "trajectory_id": {
             "type": "string",
@@ -3225,6 +3656,60 @@
             "title": "Schema Version",
             "default": "2.0"
           },
+          "hypothesis_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothesis Id"
+          },
+          "criterion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criterion Id"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "policy_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Sha256"
+          },
+          "trust_level": {
+            "type": "string",
+            "enum": [
+              "agent_reported",
+              "runtime_observed",
+              "host_evaluated"
+            ],
+            "title": "Trust Level",
+            "default": "agent_reported"
+          },
           "verification_id": {
             "type": "string",
             "title": "Verification Id"
@@ -3306,6 +3791,42 @@
         ],
         "title": "VerificationResult"
       },
+      "VerifierPolicy": {
+        "properties": {
+          "policy_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Policy Id"
+          },
+          "verifier": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Verifier"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          },
+          "trust_requirement": {
+            "type": "string",
+            "enum": [
+              "agent_reported",
+              "runtime_observed",
+              "host_evaluated"
+            ],
+            "title": "Trust Requirement",
+            "default": "host_evaluated"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "policy_id",
+          "verifier"
+        ],
+        "title": "VerifierPolicy"
+      },
       "experiment_infra__core__schema__Claim": {
         "properties": {
           "schema_version": {
@@ -3313,6 +3834,33 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "hypothesis_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothesis Id"
+          },
+          "criterion_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Criterion Ids"
+          },
+          "assessment_scope": {
+            "type": "string",
+            "enum": [
+              "unbound_legacy",
+              "criterion_bound"
+            ],
+            "title": "Assessment Scope",
+            "default": "unbound_legacy"
           },
           "claim_id": {
             "type": "string",
@@ -3413,6 +3961,31 @@
             "title": "Schema Version",
             "default": "2.0"
           },
+          "hypothesis_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hypothesis Id"
+          },
+          "criterion_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criterion Ids"
+          },
           "statement": {
             "type": "string",
             "title": "Statement"
@@ -3484,11 +4057,18 @@
           },
           "verifier": {
             "type": "string",
-            "enum": [
-              "metric",
-              "test"
-            ],
             "title": "Verifier"
+          },
+          "criterion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criterion Id"
           },
           "artifact_ids": {
             "items": {

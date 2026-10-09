@@ -13,9 +13,13 @@ All replay actions, observations, artifacts and snapshots are new append-only re
 
 The result contains original/new step IDs, expected/actual artifact hashes, exit codes,
 stdout/stderr equality and comparison policy. General commands compare logs, exit codes
-and collected file hashes. A declared test command compares exit code and artifacts;
-its stderr may include test-runner wall-clock timing, so log equality is separately
-reported instead of making nondeterministic duration text a scientific criterion.
+and collected file hashes. Declared test commands also compare stdout exactly and
+stderr with only the elapsed-seconds field of a terminal standard unittest summary
+normalized. Test counts, verdicts, tracebacks and other output remain significant;
+unrecognized output formats are compared exactly. Structured test policies supply
+the declared argv values; legacy `success_criteria.test.argv` is used only when no
+structured criteria exist. Raw log equality and the effective stderr comparison
+are both reported, so any timing difference remains visible.
 MCP/RAG calls run again and their structured outputs are compared. Nondeterminism or
 changed external responses are reported as mismatches, never silently overwritten.
 

@@ -70,6 +70,17 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "purpose": {
+      "default": "unknown",
+      "enum": [
+        "experiment",
+        "exact_replay",
+        "branch",
+        "unknown"
+      ],
+      "title": "Purpose",
+      "type": "string"
+    },
     "run_id": {
       "title": "Run Id",
       "type": "string"

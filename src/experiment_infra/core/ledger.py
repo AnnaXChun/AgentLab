@@ -101,6 +101,7 @@ class Ledger:
                 previous = session.get(ObjectIndex, obj["id"])
                 if previous:
                     if obj["kind"] in {
+                        "DecisionContext",
                         "Artifact",
                         "Evidence",
                         "VerificationResult",

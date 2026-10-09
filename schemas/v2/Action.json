@@ -7,6 +7,18 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "decision_context_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decision Context Id"
+    },
     "tool": {
       "enum": [
         "environment",
