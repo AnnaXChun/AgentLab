@@ -57,6 +57,31 @@ class ScienceAgentBenchAdapter(AdapterBase):
 
     def available_tools(self, task):
         return {
+            "python_workspace": True,
+            "tools": [
+                {
+                    "function": {
+                        "name": name,
+                        "description": description,
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"code": {"type": "string"}},
+                            "required": ["code"],
+                            "additionalProperties": False,
+                        },
+                    }
+                }
+                for name, description in [
+                    (
+                        "run_python",
+                        "Execute Python source to inspect files, data, and outputs. Variables do not persist between calls.",
+                    ),
+                    (
+                        "submit_python",
+                        "Write the supplied complete Python source to solution.py, then execute it. The source must implement the task and create its required output files.",
+                    ),
+                ]
+            ],
             "exec": "Run argv in /work; read/search using Python or shell tools",
             "write": "arguments.command.files writes UTF-8 files before argv execution",
             "finish": True,
@@ -65,10 +90,23 @@ class ScienceAgentBenchAdapter(AdapterBase):
             "expected_output": task.payload["output_fname"],
         }
 
+    def model_action(self, action):
+        command = action.arguments["command"]
+        if "solution.py" in command.get("files", {}):
+            return {"tool": "submit_python", "arguments": {"code": command["files"]["solution.py"]}}
+        if command["argv"][:2] == ["python", "-c"]:
+            return {"tool": "run_python", "arguments": {"code": command["argv"][2]}}
+        return super().model_action(action)
+
     def agent_context(self, task):
         return {
-            k: task.payload.get(k)
-            for k in ("domain_knowledge", "dataset_folder_tree", "dataset_preview")
+            "dataset_root": "benchmark/datasets",
+            "workspace": "/work",
+            "submission_exists_initially": False,
+            **{
+                k: task.payload.get(k)
+                for k in ("domain_knowledge", "dataset_folder_tree", "dataset_preview")
+            },
         }
 
     def validate_action(self, task, action):

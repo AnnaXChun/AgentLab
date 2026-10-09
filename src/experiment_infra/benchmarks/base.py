@@ -30,6 +30,9 @@ class BenchmarkAdapter(Protocol):
 class AdapterBase:
     replay_kind = "deterministic_execution"
 
+    def model_action(self, action):
+        return {"tool": action.tool, "operation": action.operation, "arguments": action.arguments}
+
     def load_task(self, task_id, split):
         for task in self.list_tasks(split):
             if task.task_id == task_id:

@@ -93,6 +93,7 @@ class Tau2Adapter(AdapterBase):
         native = self.native_task(task.task_id, task.split)
         tools = env.get_tools() + env.get_user_tools(include=native.user_tools)
         return {
+            "native_dispatch_prefix": "tau2",
             "exec_argv": ["tau2", "<tool_name>", "<JSON arguments object>"],
             "tools": [t.openai_schema for t in tools],
             "finish": True,
@@ -131,6 +132,10 @@ class Tau2Adapter(AdapterBase):
         if argv[1] not in schemas:
             raise ValueError("Unavailable native tool")
         validate(json.loads(argv[2]), schemas[argv[1]])
+
+    def model_action(self, action):
+        argv = action.arguments["command"]["argv"]
+        return {"tool": argv[1], "arguments": json.loads(argv[2])}
 
     async def evaluate(self, runtime, task, run, termination):
         from tau2.data_model.simulation import SimulationRun

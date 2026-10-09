@@ -35,6 +35,7 @@ def parser():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--temperature", type=float, default=0)
     p.add_argument("--max-steps", type=int, default=30)
+    p.add_argument("--max-response-tokens", type=int, default=2048)
     p.add_argument("--context-limit", type=int, default=120000, help="UTF-8 input byte budget")
     p.add_argument("--output-dir", type=Path, default=None)
     p.add_argument("--resume", action="store_true")
@@ -50,7 +51,10 @@ def parser():
 
 
 async def main(args):
-    if min(args.limit, args.max_steps, args.context_limit) < 1 or args.replay_samples < 0:
+    if (
+        min(args.limit, args.max_steps, args.context_limit, args.max_response_tokens) < 1
+        or args.replay_samples < 0
+    ):
         raise ValueError("Limits must be positive; replay samples must be nonnegative")
     adapter = make_adapter(args.benchmark)
     split = args.split or ("verified" if args.benchmark == "scienceagentbench" else "base")
@@ -102,12 +106,14 @@ async def main(args):
                 seed=args.seed,
                 temperature=args.temperature,
                 context_limit=args.context_limit,
+                max_tokens=args.max_response_tokens,
             ),
             args.output_dir,
             model=args.model,
             seed=args.seed,
             temperature=args.temperature,
             max_steps=args.max_steps,
+            max_response_tokens=args.max_response_tokens,
             context_limit=args.context_limit,
             replay_samples=args.replay_samples,
         )

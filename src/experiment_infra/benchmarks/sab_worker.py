@@ -51,12 +51,13 @@ def main():
         ):
             run_instances([task], data, predictions, "instance", False, True, 1, run_id, 1800)
         spec = make_test_spec(task, data, predictions)
-        image = client.images.get(spec.instance_image_key)
+        # Metadata is optional when upstream could not build an instance image.
+        # Preserve native failure logs instead of masking them with ImageNotFound.
+        image_info = image_metadata(client, spec.instance_image_key)
         Path("evaluation_environment.json").write_text(
             json.dumps(
                 {
-                    "image_id": image.id,
-                    "architecture": image.attrs.get("Architecture"),
+                    **image_info,
                     "base_image_id": client.images.get(spec.base_image_key).id,
                 }
             )
@@ -68,6 +69,20 @@ def main():
         ):
             container.remove(force=True)
         client.close()
+
+
+def image_metadata(client, name):
+    from docker.errors import ImageNotFound
+
+    try:
+        image = client.images.get(name)
+    except ImageNotFound:
+        return {"image_id": None, "architecture": None, "image_status": "not_built"}
+    return {
+        "image_id": image.id,
+        "architecture": image.attrs.get("Architecture"),
+        "image_status": "available",
+    }
 
 
 if __name__ == "__main__":

@@ -47,19 +47,19 @@ Default output directories are `results/scienceagentbench` and `results/tau2`. E
 
 Default model runs also refresh the combined `results/benchmark_summary.json` (array of benchmark rows) and `.csv`. For explicitly named experiment directories, combine selected batches with `python -m experiment_infra.benchmarks.report DIRECTORY_A DIRECTORY_B --output-dir results`. The report command rejects mixing calibration and model-baseline batches.
 
-Other controls: `--seed`, `--temperature`, `--max-steps`, `--context-limit`, `--replay-samples`. Context limit is measured in UTF-8 input bytes, explicitly not a provider token estimate. Known provider usage is saved; unknown usage/cost stays null.
+Other controls: `--seed`, `--temperature`, `--max-steps`, `--max-response-tokens`, `--context-limit`, `--replay-samples`. Context limit is measured in UTF-8 input bytes, explicitly not a provider token estimate. Known provider usage is saved; unknown usage/cost stays null.
 
 `--resume` validates the batch manifest and skips terminal tasks, including failures. An interrupted task is marked interrupted and finalized from its recorded state; its pending action is not replayed or retried. A new attempt needs a new output directory. A filesystem lock prevents concurrent writers to a batch. This does not add distributed worker recovery.
 
 ## Boundaries and mapping
 
-Adapters only load task inputs, configure environments/tools and invoke evaluators. The external runner calls `agent.next_action(state)`, then one `runtime.execute` action at a time. Model response parsing uses JSON-object mode plus mandatory strict local Pydantic validation; no prose-to-command extraction or repair requests. Supported actions are `environment.exec` and `finish`. Exec argv/files cover read/write/search with existing Docker commands. Tau2 exec is a dispatch envelope `["tau2", native_tool_name, JSON_arguments]`, never a shell.
+Adapters only load task inputs, configure environments/tools and invoke evaluators. The external runner calls `agent.next_action(state)`, then one `runtime.execute` action at a time. The model emits a native tool name and named argument object. The backend validates the tool schema and converts it into a canonical action. JSON-object mode is the default; `MODEL_RESPONSE_FORMAT=json_schema` requests constrained decoding from a supporting server. Local validation remains mandatory; there is no prose-to-command extraction or repair request. Supported actions are `environment.exec` and `finish`. Exec argv/files cover read/write/search with existing Docker commands. Tau2 exec is a dispatch envelope `["tau2", native_tool_name, JSON_arguments]`, never a shell.
 
 Experiment goal is the public task goal/ticket. Run.config contains benchmark version, split, task ID, model, temperature, seed, step/context limits, runtime version and Git commit. Initial snapshot records the environment fingerprint. Core schemas and database migrations remain unchanged. The only runtime extension passes optional token usage into the existing TrajectoryStep field.
 
 Official evaluation runs through a driver-owned gateway action. The runtime produces its immutable observation/log. NativeResultVerifier checks that receipt's exact content hash and wraps the native metric in VerificationResult → Evidence → Claim. Native success alone can support the task-completed claim. An evaluator crash yields no successful claim. Model prompts contain no evaluator invocation tool.
 
-Model input context and structured response metadata are stored as separate artifacts linked to each model action. Raw reasoning fields and malformed free-form replies are not retained. Successful and failed commands have log artifacts and workspace snapshots where supported.
+Model input context, exact API request messages/decoding configuration and structured response metadata are stored as separate artifacts linked to each model action. Exact requests are indexed by `request_refs` in task rows. Runtime IDs and hidden task identifiers remain in the ledger, outside model-visible state. Raw reasoning fields and malformed free-form replies are not retained. Successful and failed commands have log artifacts and workspace snapshots where supported.
 
 ## Metrics
 

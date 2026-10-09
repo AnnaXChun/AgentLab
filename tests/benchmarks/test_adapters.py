@@ -79,3 +79,18 @@ async def test_submission_transport_error_is_not_a_missing_program():
     env.backend._python.side_effect = RuntimeError("Docker unavailable")
     with pytest.raises(RuntimeError, match="Docker unavailable"):
         await env.submission("test-handle")
+
+
+def test_missing_native_image_does_not_mask_evaluator_failure():
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from docker.errors import ImageNotFound
+
+    from experiment_infra.benchmarks.sab_worker import image_metadata
+
+    client = SimpleNamespace(
+        images=SimpleNamespace(get=Mock(side_effect=ImageNotFound("not built")))
+    )
+    info = image_metadata(client, "missing")
+    assert info["image_id"] is None and info["image_status"] == "not_built"

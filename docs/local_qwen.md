@@ -1,22 +1,20 @@
 # Local Qwen3-1.7B on Apple Silicon
 
-AgentLab 0.3.1 can use a model running on the same machine without a cloud API key or paid inference endpoint. MLX runs on the Mac GPU; the benchmark environments continue to use Docker/native tools. A loopback HTTP interface connects the existing runner to the model.
+AgentLab 0.3.2 runs the original Qwen3-1.7B locally through MLX and Outlines. It has a verified tau2 telecom-solo success with native reward 1 and matching deterministic replay. See [the adaptation report](qwen_adaptation.md) for the successful trajectory and retained failures.
 
-## Installed and verified on 2026-09-30
+## Environment
 
-- Apple M5 Pro, 48 GiB unified memory.
-- Official `Qwen/Qwen3-1.7B`, revision `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e`.
-- Original BF16 weights, no quantization: 4,063,515,592 weight-file bytes (about 3.78 GiB), plus tokenizer and runtime/cache memory.
-- `mlx-lm==0.31.3`, `mlx==0.32.3`; all inference dependencies pinned in `examples/local_qwen/requirements.txt` and installed separately under `.local-model/venv`.
-- Local URL: `http://127.0.0.1:8081/v1`. No API key required. Cloud endpoints still require their configured credentials.
-- Thinking disabled with `enable_thinking=false`. Server defaults: temperature 0.7, top-p 0.8, top-k 20. The runner's `--temperature` overrides that server default; use 0.7 explicitly to reproduce these checks.
-- Weights are cached in the local Hugging Face cache. The serving process uses `HF_HUB_OFFLINE=1`; model inference does not contact a cloud model provider. Initial setup requires network access to download dependencies and weights.
+- Apple M5 Pro, 48 GiB unified memory; Docker uses a separate 12 GiB Colima VM.
+- Official `Qwen/Qwen3-1.7B`, revision `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e`, original BF16 weights (about 3.78 GiB).
+- `mlx==0.32.3`, `mlx-lm==0.31.3`, `outlines==1.3.3`. Dependencies are pinned in `examples/local_qwen/requirements.txt` and isolated under `.local-model/venv`.
+- Loopback service `http://127.0.0.1:8081/v1`, no API key. The service is single-request, nonstreaming and intended for local benchmark use.
+- Thinking enabled by `manage.py serve`, bounded to `min(1024, max_tokens // 2)` generated tokens before final JSON. Reasoning is discarded; only final structured actions and token counts are returned. Total completion usage includes reasoning.
+- Outlines constrains final output to the tool's JSON Schema; the client independently validates tool names and argument types. This prevents malformed actions, not task-solving mistakes.
+- Top-p 0.8, top-k 20; reproduction commands explicitly set temperature 0.6 and seed 0.
 
-The machine has ample memory for this model alongside the configured 12 GiB Colima VM. Model size and task-solving ability are separate: sufficient hardware does not make a 1.7B model reliable at complex scientific or tool-use tasks.
+Initial setup downloads dependencies and weights. Serving uses `HF_HUB_OFFLINE=1` and needs no cloud inference provider.
 
 ## Prepare and start
-
-From the repository root:
 
 ```bash
 uv sync --extra benchmarks
@@ -24,57 +22,54 @@ uv sync --extra benchmarks
 .venv/bin/python examples/local_qwen/manage.py serve
 ```
 
-`serve` runs in the foreground, binds only to loopback and loads the exact downloaded snapshot. Keep that terminal open; Ctrl-C stops it. No login/startup service is installed. The initial session's model server is running separately in the task terminal.
+Keep the serving terminal open. Ctrl-C stops it; no startup service is installed. Setup writes ignored `.env.local-qwen` and `.local-model/model-manifest.json`, including model revision and serving configuration. The environment file sets `MODEL_RESPONSE_FORMAT=json_schema`, the local URL and model path. No environment file is loaded implicitly.
 
-In another terminal, from the same repository:
+In another terminal:
 
 ```bash
 source .env.local-qwen
 .venv/bin/python examples/local_qwen/smoke.py
 ```
 
-The generated `.env.local-qwen` configures the local URL, empty API key and absolute pinned model path. It is ignored by Git. Setup also writes `.local-model/model-manifest.json`. Model caches, virtual environments and generated results are excluded from both Git and the Docker build context.
+The connectivity smoke asks the model to generate a simple Python program, executes it in Docker, verifies its output and exports the run. It is separate from benchmark success.
 
-The connectivity smoke makes one real model call, executes the generated Python action inside Docker, verifies stdout, finalizes the run and exports artifacts. The validated run `f1f149fc-5a3f-4c15-bd49-9802d102555f` computed the sum of integers 1–10 and printed `55`. Its model call used 605 prompt tokens and 78 output tokens, taking approximately 1.46 seconds including prompt processing. This is one warm connectivity measurement, not a throughput benchmark. Results are in `results/local-qwen-connectivity/check.json` and its canonical export directory.
+## Reproduce the successful benchmark case
 
-## Run benchmark tasks
+Install the pinned [benchmark environments](benchmarks.md), start the model service, then:
 
 ```bash
 source .env.local-qwen
 .venv/bin/python -m experiment_infra.benchmarks.run \
-  --benchmark tau2 --limit 5 --max-steps 10 --temperature 0.7 \
-  --output-dir results/qwen3-tau2-new
-
-.venv/bin/python -m experiment_infra.benchmarks.run \
-  --benchmark scienceagentbench \
-  --task-id 5 --task-id 16 --task-id 40 --task-id 41 --task-id 92 \
-  --limit 5 --max-steps 10 --temperature 0.7 \
-  --output-dir results/qwen3-sab-new
+  --benchmark tau2 \
+  --task-id '[mobile_data_issue]airplane_mode_on|data_mode_off[PERSONA:None]' \
+  --limit 1 --max-steps 25 --max-response-tokens 4096 \
+  --temperature 0.6 --seed 0 \
+  --output-dir results/qwen-success-new
 ```
 
-Use new output directories for independent attempts; `--resume` does not retry terminal failures. Both commands query the local model. SAB visual tasks still need the upstream official visual judge configuration and are outside these numeric-task checks.
+The task ID selects the official task; it is not included in the model-visible state. The model receives the public ticket, official policy/tool descriptions, step budget and prior tool results. It receives no reference action sequence or hidden evaluator criteria.
 
-## Actual integration smoke results
+Use a fresh output directory for each attempt. `--resume` skips terminal failures; it does not retry them. Default replay executes saved actions in a fresh environment, without asking the model again. Fresh model generation and deterministic action replay are different checks.
 
-The first real-model batches used temperature 0.7, seed 0, a 10-step limit, 2,048 maximum response tokens and a 120,000-byte input budget. They are distinct from the earlier reference-fixture calibration; no reference solutions were supplied to the model.
+For a broader exploratory batch use `--benchmark tau2 --limit 5`; ScienceAgentBench is selected with `--benchmark scienceagentbench`. SAB numeric tasks need the full official bundle; visual judging has additional upstream requirements. A selected successful case is not a benchmark-wide accuracy estimate.
 
-| Result | tau2 telecom-solo | ScienceAgentBench |
-| --- | ---: | ---: |
-| Tasks attempted | 5 | 5 |
-| Successful tasks | 0 | 0 |
-| Available native evaluations | 5 | 0 |
-| Format failures | 5 | 2 |
-| Tool execution failures | 0 | 3 |
-| Canonical trajectories | 5 | 5 |
-| Linked native Evidence | 5 | 0 |
-| Sampled replay completed / matched | 1 / 1 | 1 / 0 |
+## Prompt and failure diagnostics
 
-Tau2 native evaluation rejected the unchanged task states. The SAB model failed to produce usable `solution.py` submissions; the official harness produced no per-instance results, recorded as evaluator errors in addition to the original model/tool failures. SAB's zero successful-attempt count must not be treated as five completed native scores. Its replay completed the recorded operations but did not match; that discrepancy remains visible in the export.
+Each model call saves the exact system/user/history messages, response schema, temperature, seed, token limit and `prompt_version` as a `model_request` artifact, linked through the task row's `request_refs`. The implementation is in `src/experiment_infra/agents/openai_compatible.py`. Credentials and private reasoning are not stored.
 
-Batches: `results/qwen3-1.7b-tau2` and `results/qwen3-1.7b-scienceagentbench`. Combined table: `results/local-qwen/benchmark_summary.json/csv`. These are integration runs during development, not a final clean-commit paper baseline. The action prompt was clarified during integration and its optional rationale field corrected afterward. Earlier connectivity attempts and benchmark failures are retained in the event store; no automated retry or recovery was added.
+The native action interface is `{"tool":"name","arguments":{...}}`. Tau2 parameters are serialized into its dispatch command by the adapter. For SAB, `run_python` inspects data and `submit_python` saves the model's complete source as `solution.py` unchanged. Relative input/output paths allow execution in both the agent workspace and the official evaluator's workspace.
 
-MLX 0.31.3 accepts but does not enforce the `response_format` JSON hint. AgentLab enforces its action schema locally and stops invalid actions before tool execution. No free-form answer or shell command is guessed from malformed output. The model is installed and executable; these task failures reflect the tested small model/prompt/tool interface rather than insufficient host memory.
+The initial v0.3.1 batches (`results/qwen3-1.7b-tau2` and `results/qwen3-1.7b-scienceagentbench`) had no successes. Tau2 initially failed because its arguments were encoded incorrectly, even when the selected tool was appropriate. SAB included missing submissions and truncated/invalid replies. The native interface, conversational history, constrained decoding and explicit submission guidance address those integration faults. Remaining legal-action failures are retained and evaluated normally.
 
-Sources: [official model](https://huggingface.co/Qwen/Qwen3-1.7B), [MLX LM](https://github.com/ml-explore/mlx-lm). Local setup follows the Qwen model card's non-thinking sampling guidance.
+Validation commands:
 
-Final verification: **72 tests passed** with `HARNESS_INTEGRATION=1 .venv/bin/pytest -q` (55.99 seconds), including live Docker/PostgreSQL checks. Ruff lint and formatting checks pass. Tests cover keyless loopback requests, continued credential requirements for remote hosts, and the optional rationale field.
+```bash
+HARNESS_INTEGRATION=1 .venv/bin/pytest -q
+.local-model/venv/bin/python -m unittest discover -s tests/local_qwen -v
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+```
+
+The MLX boundary tests run in the isolated environment and skip in ordinary non-MLX CI. Do not run Docker integration tests concurrently with SAB evaluations: a legacy integration check requires no remaining sandbox containers.
+
+Sources: [official Qwen model](https://huggingface.co/Qwen/Qwen3-1.7B), [MLX LM](https://github.com/ml-explore/mlx-lm), [Outlines](https://github.com/dottxt-ai/outlines).

@@ -46,6 +46,7 @@ def prepare():
     (ROOT / ".env.local-qwen").write_text(
         "export MODEL_BASE_URL=http://127.0.0.1:8081/v1\n"
         "export MODEL_API_KEY=''\n"
+        "export MODEL_RESPONSE_FORMAT=json_schema\n"
         "export MODEL_NAME=" + shlex.quote(model_path) + "\n"
     )
     (LOCAL / "model-manifest.json").write_text(
@@ -54,12 +55,13 @@ def prepare():
                 "model": MODEL,
                 "revision": REVISION,
                 "weights": "original BF16, unquantized",
-                "engine": "mlx-lm",
-                "enable_thinking": False,
+                "engine": "mlx-lm + outlines",
+                "enable_thinking": True,
+                "thinking_token_budget": "min(1024, max_tokens // 2)",
                 "top_p": 0.8,
                 "top_k": 20,
                 "path": model_path,
-                "structured_output": "prompt plus strict client validation; no server grammar",
+                "structured_output": "JSON Schema constrained decoding plus strict client validation",
             },
             indent=2,
         )
@@ -71,33 +73,13 @@ def prepare():
 
 def serve():
     model_path = (LOCAL / "model-path.txt").read_text().strip()
-    binary = str(LOCAL / "venv/bin/mlx_lm.server")
+    binary = str(LOCAL / "venv/bin/python")
     args = [
         binary,
+        str(Path(__file__).with_name("constrained_server.py")),
         "--model",
         model_path,
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8081",
-        "--chat-template-args",
-        '{"enable_thinking":false}',
-        "--temp",
-        "0.7",
-        "--top-p",
-        "0.8",
-        "--top-k",
-        "20",
-        "--prompt-cache-size",
-        "1",
-        "--prompt-cache-bytes",
-        "2GB",
-        "--decode-concurrency",
-        "1",
-        "--prompt-concurrency",
-        "1",
-        "--log-level",
-        "WARNING",
+        "--thinking",
     ]
     env = {**os.environ, "HF_HUB_OFFLINE": "1", "HF_HUB_DISABLE_TELEMETRY": "1"}
     os.execve(binary, args, env)

@@ -120,6 +120,7 @@ class BenchmarkRunner:
         seed=0,
         temperature=0,
         max_steps=30,
+        max_response_tokens=2048,
         context_limit=120000,
         replay_samples=1,
         run_kind="model_baseline",
@@ -137,6 +138,7 @@ class BenchmarkRunner:
             "temperature": temperature,
             "seed": seed,
             "max_steps": max_steps,
+            "max_response_tokens": max_response_tokens,
             "context_limit": context_limit,
             "context_limit_unit": "utf8_bytes",
             "runtime_version": importlib.metadata.version("scientific-harness"),
@@ -291,7 +293,7 @@ class BenchmarkRunner:
                 state = await rt.get_state(run.experiment_id, run.run_id)
                 context = {
                     "task": task.goal,
-                    "state": state,
+                    "state": {"step": row["steps"], "max_steps": self.max_steps, "seed": self.seed},
                     "context": self.adapter.agent_context(task),
                     "available_tools": self.adapter.available_tools(task),
                     "history": history,
@@ -305,9 +307,21 @@ class BenchmarkRunner:
                 )
                 row.update(state_before_action=state, pending_action=None)
                 atomic_json(journal, row)
+                request_ref = None
                 try:
                     action = await agent.next_action(context)
                 finally:
+                    request = getattr(agent, "last_request", None)
+                    if request:
+                        request_artifact = await rt._artifact(
+                            run,
+                            json.dumps(request).encode(),
+                            "config",
+                            metadata={"role": "model_request"},
+                            mime_type="application/json",
+                        )
+                        row.setdefault("request_refs", []).append(request_artifact.artifact_id)
+                        request_ref = request_artifact.artifact_id
                     call = getattr(agent, "last_call", None)
                     if call:
                         row["model_calls"].append(call)
@@ -327,7 +341,13 @@ class BenchmarkRunner:
                 if action.operation == "finish":
                     break
                 action = action.model_copy(
-                    update={"context_refs": [*action.context_refs, prompt.artifact_id]}
+                    update={
+                        "context_refs": [
+                            *action.context_refs,
+                            prompt.artifact_id,
+                            *([request_ref] if request_ref else []),
+                        ]
+                    }
                 )
                 stage = "execute"
                 step = await rt.execute(
@@ -343,8 +363,12 @@ class BenchmarkRunner:
                 atomic_json(journal, row)
                 history.append(
                     {
-                        "action": action.model_dump(mode="json"),
-                        "observation": step.observation.model_dump(mode="json"),
+                        "action": self.adapter.model_action(action),
+                        "observation": {
+                            "exit_code": step.observation.exit_code,
+                            "stdout": step.observation.stdout,
+                            "stderr": step.observation.stderr,
+                        },
                     }
                 )
                 if step.observation.exit_code != 0 or "snapshot_error" in step.state_after:

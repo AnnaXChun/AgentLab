@@ -97,6 +97,7 @@ class TestAgent:
         self.task, self.n = task, 0
 
     async def next_action(self, state):
+        assert set(state["state"]) == {"step", "max_steps", "seed"}
         if self.task.task_id == "crash":
             raise AgentFormatError("malformed")
         self.n += 1
