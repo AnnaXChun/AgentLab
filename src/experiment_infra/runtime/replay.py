@@ -1,5 +1,44 @@
+import re
+
 from experiment_infra.core.schema import Action, CounterfactualLink, ReplayResult
 from packages.core.models.schemas import EventType as T
+
+_UNITTEST_SUMMARY = re.compile(
+    r"(?m)^(?P<prefix>-{70}\nRan \d+ tests? in )\d+\.\d+"
+    r"(?P<suffix>s\n\n(?:OK(?: \([^\r\n]*\))?|FAILED \([^\r\n]*\))\n?)\Z"
+)
+
+
+def _declared_test(experiment, action):
+    if action.tool != "environment" or action.operation != "exec":
+        return False
+    command = action.arguments.get("command")
+    argv = command.get("argv") if isinstance(command, dict) else None
+    if argv is None:
+        return False
+    if experiment.criteria:
+        # Structured policies are authoritative, as in resolve_criterion. A stale
+        # legacy declaration must not broaden the comparison exception.
+        return any(
+            criterion.policy.verifier == "test" and criterion.policy.parameters["argv"] == argv
+            for criterion in experiment.criteria
+        )
+    legacy = experiment.success_criteria.get("test")
+    return isinstance(legacy, dict) and legacy.get("argv") == argv
+
+
+def _test_stderr_match(expected, actual):
+    # Recognize only the terminal standard unittest summary. Test counts,
+    # verdicts, tracebacks and all other output stay byte-for-byte significant.
+    old = _UNITTEST_SUMMARY.search(expected)
+    new = _UNITTEST_SUMMARY.search(actual)
+    if old is None or new is None:
+        return expected == actual
+    return (
+        expected[: old.start()] == actual[: new.start()]
+        and old["prefix"] == new["prefix"]
+        and old["suffix"] == new["suffix"]
+    )
 
 
 async def exact_replay(runtime, run_id):
@@ -12,6 +51,7 @@ async def exact_replay(runtime, run_id):
         seed=original.seed,
         snapshot_id=original.environment_snapshot_id,
         parent_run_id=run_id,
+        purpose="exact_replay",
         environment_spec=original.environment_spec,
         code_version=original.code_version,
     )
@@ -19,6 +59,8 @@ async def exact_replay(runtime, run_id):
     comparisons = []
     try:
         for step in trajectory.steps:
+            # Re-execution is not a new agent decision. Do not reuse the original
+            # decision_context_id: it belongs to the source run and decision.
             action = Action(
                 **step.action.model_dump(
                     include={
@@ -45,14 +87,13 @@ async def exact_replay(runtime, run_id):
             )
             stdout_match = step.observation.stdout == executed.observation.stdout
             stderr_match = step.observation.stderr == executed.observation.stderr
-            test_command = experiment.success_criteria.get("test", {}).get("argv")
-            is_test = (
-                action.tool == "environment"
-                and test_command is not None
-                and action.arguments.get("command", {}).get("argv") == test_command
+            is_test = _declared_test(experiment, action)
+            stderr_comparison_match = (
+                _test_stderr_match(step.observation.stderr, executed.observation.stderr)
+                if is_test
+                else stderr_match
             )
-            if not is_test:
-                matched = matched and stdout_match and stderr_match
+            matched = matched and stdout_match and stderr_comparison_match
             if action.tool != "environment":
                 old = {
                     k: v
@@ -76,7 +117,8 @@ async def exact_replay(runtime, run_id):
                     "matched": matched,
                     "stdout_match": stdout_match,
                     "stderr_match": stderr_match,
-                    "comparison_policy": "declared_test_exit_code_and_artifacts"
+                    "stderr_comparison_match": stderr_comparison_match,
+                    "comparison_policy": "declared_test_unittest_timing_normalized"
                     if is_test
                     else "exit_code_artifacts_stdout_stderr",
                 }
@@ -116,6 +158,7 @@ async def branch_replay(runtime, run_id, from_step, *, config=None):
         snapshot_id=step.state_after["snapshot_id"],
         parent_run_id=run_id,
         parent_step_id=step.step_id,
+        purpose="branch",
         environment_spec=original.environment_spec,
         code_version=original.code_version,
     )

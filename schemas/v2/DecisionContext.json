@@ -1,0 +1,76 @@
+{
+  "additionalProperties": false,
+  "description": "Immutable serialized input. Coverage is client-attested, not model-use proof.",
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "context_id": {
+      "title": "Context Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "payload_json": {
+      "title": "Payload Json",
+      "type": "string"
+    },
+    "payload_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Payload Sha256",
+      "type": "string"
+    },
+    "coverage": {
+      "default": "unknown",
+      "enum": [
+        "complete",
+        "partial",
+        "unknown"
+      ],
+      "title": "Coverage",
+      "type": "string"
+    },
+    "source_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "last_step_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Step Id"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "run_id",
+    "payload_json",
+    "payload_sha256"
+  ],
+  "title": "DecisionContext",
+  "type": "object"
+}

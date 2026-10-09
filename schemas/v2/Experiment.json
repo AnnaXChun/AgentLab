@@ -60,6 +60,66 @@
       },
       "title": "EnvironmentSpec",
       "type": "object"
+    },
+    "SuccessCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "criterion_id": {
+          "minLength": 1,
+          "title": "Criterion Id",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/$defs/VerifierPolicy"
+        }
+      },
+      "required": [
+        "criterion_id",
+        "policy"
+      ],
+      "title": "SuccessCriterion",
+      "type": "object"
+    },
+    "VerifierPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "verifier": {
+          "minLength": 1,
+          "title": "Verifier",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        },
+        "trust_requirement": {
+          "default": "host_evaluated",
+          "enum": [
+            "agent_reported",
+            "runtime_observed",
+            "host_evaluated"
+          ],
+          "title": "Trust Requirement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "verifier"
+      ],
+      "title": "VerifierPolicy",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -69,6 +129,13 @@
       "default": "2.0",
       "title": "Schema Version",
       "type": "string"
+    },
+    "criteria": {
+      "items": {
+        "$ref": "#/$defs/SuccessCriterion"
+      },
+      "title": "Criteria",
+      "type": "array"
     },
     "experiment_id": {
       "title": "Experiment Id",

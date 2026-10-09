@@ -1,8 +1,11 @@
+import hashlib
+import json
 from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from experiment_infra.verifiers.policy import SuccessCriterion, criteria_by_id
 from packages.core.models.schemas import now, uid
 
 
@@ -22,6 +25,7 @@ class EnvironmentSpec(Model):
 
 
 class Experiment(Model):
+    criteria: list[SuccessCriterion] = Field(default_factory=list)
     experiment_id: str = Field(default_factory=uid)
     goal: str = Field(min_length=1, max_length=8000)
     hypothesis_ids: list[str] = Field(default_factory=list)
@@ -35,8 +39,14 @@ class Experiment(Model):
     created_at: datetime = Field(default_factory=now)
     finished_at: datetime | None = None
 
+    @model_validator(mode="after")
+    def unique_criteria(self):
+        criteria_by_id(self)
+        return self
+
 
 class Hypothesis(Model):
+    criterion_ids: list[str] = Field(default_factory=list)
     hypothesis_id: str = Field(default_factory=uid)
     experiment_id: str
     statement: str = Field(min_length=1)
@@ -47,7 +57,11 @@ class Hypothesis(Model):
     parent_hypothesis_id: str | None = None
 
 
+RunPurpose = Literal["experiment", "exact_replay", "branch", "unknown"]
+
+
 class Run(Model):
+    purpose: RunPurpose = "unknown"
     run_id: str = Field(default_factory=uid)
     experiment_id: str
     hypothesis_ids: list[str] = Field(default_factory=list)
@@ -94,7 +108,36 @@ class Artifact(Model):
     created_at: datetime = Field(default_factory=now)
 
 
+class DecisionContext(Model):
+    """Immutable serialized input. Coverage is client-attested, not model-use proof."""
+
+    context_id: str = Field(default_factory=uid)
+    experiment_id: str
+    run_id: str
+    payload_json: str
+    payload_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    coverage: Literal["complete", "partial", "unknown"] = "unknown"
+    source_refs: tuple[str, ...] = ()
+    last_step_id: str | None = None
+    created_at: datetime = Field(default_factory=now)
+
+    @model_validator(mode="after")
+    def valid_payload(self):
+        data = json.loads(self.payload_json)
+        canonical = json.dumps(data, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        if canonical != self.payload_json:
+            raise ValueError("Decision payload must be canonical JSON")
+        if hashlib.sha256(canonical.encode()).hexdigest() != self.payload_sha256:
+            raise ValueError("Decision payload hash mismatch")
+        return self
+
+    @property
+    def payload(self):
+        return json.loads(self.payload_json)
+
+
 class Action(Model):
+    decision_context_id: str | None = None
     tool: Literal["environment", "mcp", "rag"]
     operation: str
     arguments: dict[str, Any] = Field(default_factory=dict)
@@ -104,6 +147,7 @@ class Action(Model):
 
 
 class ActionEvent(Model):
+    decision_context_id: str | None = None
     event_id: str = Field(default_factory=uid)
     experiment_id: str
     run_id: str
@@ -141,6 +185,12 @@ class Snapshot(Model):
 
 
 class VerificationResult(Model):
+    hypothesis_id: str | None = None
+    criterion_id: str | None = None
+    policy_id: str | None = None
+    policy_sha256: str | None = None
+    trust_level: Literal["agent_reported", "runtime_observed", "host_evaluated"] = "agent_reported"
+
     verification_id: str = Field(default_factory=uid)
     experiment_id: str
     run_id: str
@@ -156,6 +206,11 @@ class VerificationResult(Model):
 
 
 class Evidence(Model):
+    criterion_id: str | None = None
+    policy_id: str | None = None
+    policy_sha256: str | None = None
+    trust_level: Literal["agent_reported", "runtime_observed", "host_evaluated"] = "agent_reported"
+
     evidence_id: str = Field(default_factory=uid)
     experiment_id: str
     hypothesis_id: str
@@ -172,6 +227,9 @@ class Evidence(Model):
 
 
 class Claim(Model):
+    hypothesis_id: str | None = None
+    criterion_ids: list[str] = Field(default_factory=list)
+    assessment_scope: Literal["unbound_legacy", "criterion_bound"] = "unbound_legacy"
     claim_id: str = Field(default_factory=uid)
     experiment_id: str
     statement: str
@@ -187,6 +245,7 @@ class Claim(Model):
 
 
 class TrajectoryStep(Model):
+    decision_context: DecisionContext | None = None
     trajectory_id: str
     step_id: str = Field(default_factory=uid)
     state_before: dict[str, Any]
@@ -207,6 +266,8 @@ class TrajectoryStep(Model):
 
 
 class Trajectory(Model):
+    purpose: RunPurpose = "unknown"
+    lineage_root_experiment_id: str | None = None
     trajectory_id: str
     experiment_id: str
     run_id: str
@@ -253,6 +314,7 @@ class ReplayResult(Model):
 
 
 OBJECT_IDS = {
+    "DecisionContext": "context_id",
     "Experiment": "experiment_id",
     "Hypothesis": "hypothesis_id",
     "Run": "run_id",

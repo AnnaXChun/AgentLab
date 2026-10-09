@@ -7,6 +7,34 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "hypothesis_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hypothesis Id"
+    },
+    "criterion_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Criterion Ids",
+      "type": "array"
+    },
+    "assessment_scope": {
+      "default": "unbound_legacy",
+      "enum": [
+        "unbound_legacy",
+        "criterion_bound"
+      ],
+      "title": "Assessment Scope",
+      "type": "string"
+    },
     "claim_id": {
       "title": "Claim Id",
       "type": "string"

@@ -7,6 +7,64 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "hypothesis_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hypothesis Id"
+    },
+    "criterion_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Criterion Id"
+    },
+    "policy_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Id"
+    },
+    "policy_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Sha256"
+    },
+    "trust_level": {
+      "default": "agent_reported",
+      "enum": [
+        "agent_reported",
+        "runtime_observed",
+        "host_evaluated"
+      ],
+      "title": "Trust Level",
+      "type": "string"
+    },
     "verification_id": {
       "title": "Verification Id",
       "type": "string"

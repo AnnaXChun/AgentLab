@@ -9,6 +9,18 @@
           "title": "Schema Version",
           "type": "string"
         },
+        "decision_context_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Context Id"
+        },
         "event_id": {
           "title": "Event Id",
           "type": "string"
@@ -93,6 +105,34 @@
           "title": "Schema Version",
           "type": "string"
         },
+        "hypothesis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hypothesis Id"
+        },
+        "criterion_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Criterion Ids",
+          "type": "array"
+        },
+        "assessment_scope": {
+          "default": "unbound_legacy",
+          "enum": [
+            "unbound_legacy",
+            "criterion_bound"
+          ],
+          "title": "Assessment Scope",
+          "type": "string"
+        },
         "claim_id": {
           "title": "Claim Id",
           "type": "string"
@@ -143,6 +183,82 @@
         "statement"
       ],
       "title": "Claim",
+      "type": "object"
+    },
+    "DecisionContext": {
+      "additionalProperties": false,
+      "description": "Immutable serialized input. Coverage is client-attested, not model-use proof.",
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "context_id": {
+          "title": "Context Id",
+          "type": "string"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "payload_json": {
+          "title": "Payload Json",
+          "type": "string"
+        },
+        "payload_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Payload Sha256",
+          "type": "string"
+        },
+        "coverage": {
+          "default": "unknown",
+          "enum": [
+            "complete",
+            "partial",
+            "unknown"
+          ],
+          "title": "Coverage",
+          "type": "string"
+        },
+        "source_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "last_step_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Step Id"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "experiment_id",
+        "run_id",
+        "payload_json",
+        "payload_sha256"
+      ],
+      "title": "DecisionContext",
       "type": "object"
     },
     "ObservationEvent": {
@@ -221,6 +337,17 @@
           "default": "2.0",
           "title": "Schema Version",
           "type": "string"
+        },
+        "decision_context": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DecisionContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "trajectory_id": {
           "title": "Trajectory Id",
@@ -359,6 +486,64 @@
           "title": "Schema Version",
           "type": "string"
         },
+        "hypothesis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hypothesis Id"
+        },
+        "criterion_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Criterion Id"
+        },
+        "policy_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Policy Id"
+        },
+        "policy_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Policy Sha256"
+        },
+        "trust_level": {
+          "default": "agent_reported",
+          "enum": [
+            "agent_reported",
+            "runtime_observed",
+            "host_evaluated"
+          ],
+          "title": "Trust Level",
+          "type": "string"
+        },
         "verification_id": {
           "title": "Verification Id",
           "type": "string"
@@ -449,6 +634,29 @@
       "default": "2.0",
       "title": "Schema Version",
       "type": "string"
+    },
+    "purpose": {
+      "default": "unknown",
+      "enum": [
+        "experiment",
+        "exact_replay",
+        "branch",
+        "unknown"
+      ],
+      "title": "Purpose",
+      "type": "string"
+    },
+    "lineage_root_experiment_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lineage Root Experiment Id"
     },
     "trajectory_id": {
       "title": "Trajectory Id",

@@ -5,6 +5,8 @@ from experiment_infra.core.schema import VerificationResult
 
 
 class MetricVerifier:
+    """Compare submitted numbers, without independently measuring their truth."""
+
     async def verify(self, experiment, run, artifacts, claims):
         if len(artifacts) != 1:
             raise ValueError("MetricVerifier requires one metrics artifact")
@@ -13,6 +15,8 @@ class MetricVerifier:
             raise ValueError("MetricVerifier requires a typed metric artifact")
         criteria = experiment.success_criteria["metric"]
         values = json.loads(data)
+        if not isinstance(values, dict):
+            raise ValueError("Metrics artifact must contain a JSON object")
         metric = criteria["field"]
         observed = values[metric]
         baseline = (

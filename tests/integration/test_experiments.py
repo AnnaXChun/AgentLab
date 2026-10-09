@@ -47,16 +47,14 @@ async def test_experiment_slice_replay_branch_provenance_export(runtime, tmp_pat
         "trajectory.jsonl",
         "artifacts.jsonl",
         "evidence.jsonl",
-        "sft.jsonl",
         "rl_transition.jsonl",
     ):
         assert (path / file).stat().st_size > 0
     rows = [json.loads(x) for x in (path / "sft.jsonl").read_text().splitlines()]
-    assert set(rows[0]["input"]) == {"state", "context_refs"}
-    assert set(rows[0]["output"]) == {"action"}
+    assert rows == []  # Legacy scripted demo did not capture its actual decision inputs.
     rl = [json.loads(x) for x in (path / "rl_transition.jsonl").read_text().splitlines()]
     assert all(x["reward_signals"] == {} for x in rl)
-    assert len([x for x in rl if x["terminal"]]) == 3
+    assert len([x for x in rl if x["terminal"]]) == 2
     assert "private_chain_of_thought" not in (path / "sft.jsonl").read_text()
     # Reconnect: all first-class records survive runtime object destruction.
     reloaded = ExperimentRuntime(runtime)

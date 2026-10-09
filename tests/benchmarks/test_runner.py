@@ -139,7 +139,13 @@ async def test_batch_isolation_evidence_replay_and_exports(store, artifacts, tmp
     assert summary["avg_tokens"] is None and summary["evidence_coverage"] == 1
     failures = [json.loads(x) for x in (tmp_path / "failures.jsonl").read_text().splitlines()]
     assert len(failures) == 2 and all(f["snapshot_id"] for f in failures)
-    assert len((tmp_path / "sft.jsonl").read_text().splitlines()) == 2  # no verifier/replay actions
+    # The fixture's hidden agent logic is unknown; default SFT excludes it.
+    assert not (tmp_path / "sft.jsonl").read_text()
+    transitions = [
+        json.loads(line) for line in (tmp_path / "rl_transition.jsonl").read_text().splitlines()
+    ]
+    assert len(transitions) == 2  # no verifier/replay actions
+    assert all(row["context_coverage"] == "unknown" for row in transitions)
     claim = await driver.runtime.ledger.get(rows[0]["claim_id"], "Claim")
     assert claim.status == "SUPPORTED"
     graph = await driver.runtime.get_ancestors(claim.claim_id)

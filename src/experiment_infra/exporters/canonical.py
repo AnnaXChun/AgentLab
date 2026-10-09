@@ -2,7 +2,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from experiment_infra.core.schema import Artifact, Evidence, Trajectory
+from experiment_infra.core.schema import Artifact, DecisionContext, Evidence, Trajectory
+from experiment_infra.exporters.policy import ExportPolicy
 from experiment_infra.exporters.rl import rl_rows
 from experiment_infra.exporters.sft import sft_rows
 from packages.core.models.schemas import EventType as T
@@ -10,11 +11,28 @@ from packages.core.models.schemas import uid
 from packages.exporters.trajectory import write_jsonl
 
 
-async def export_experiment(runtime, experiment_id, directory):
-    await runtime.ledger.get(experiment_id, "Experiment")
+async def lineage_root(runtime, experiment_id):
+    """Resolve ancestry from the ledger, refusing broken or cyclic lineages."""
+    seen = set()
+    current = experiment_id
+    while current not in seen:
+        seen.add(current)
+        experiment = await runtime.ledger.get(current, "Experiment")
+        if experiment.parent_experiment_id is None:
+            return current
+        current = experiment.parent_experiment_id
+    raise ValueError("Experiment lineage contains a cycle")
+
+
+async def export_experiment(runtime, experiment_id, directory, *, policy=None):
+    policy = ExportPolicy() if policy is None else ExportPolicy.model_validate(policy)
+    root = await lineage_root(runtime, experiment_id)
     destination = Path(directory) / experiment_id / uid()
     await runtime.ledger.record(
-        experiment_id, T.EXPORT_STARTED, input={"directory": str(destination)}, status="PENDING"
+        experiment_id,
+        T.EXPORT_STARTED,
+        input={"directory": str(destination), "training_policy": policy.model_dump()},
+        status="PENDING",
     )
     try:
         objects = await runtime.ledger.objects(experiment_id)
@@ -22,6 +40,9 @@ async def export_experiment(runtime, experiment_id, directory):
             await runtime.get_trajectory(x.trajectory_id)
             for x in objects.values()
             if isinstance(x, Trajectory)
+        ]
+        trajectories = [
+            t.model_copy(update={"lineage_root_experiment_id": root}) for t in trajectories
         ]
         destination.mkdir(parents=True, exist_ok=False)
         rows = {
@@ -32,8 +53,13 @@ async def export_experiment(runtime, experiment_id, directory):
             "evidence.jsonl": [
                 x.model_dump(mode="json") for x in objects.values() if isinstance(x, Evidence)
             ],
-            "sft.jsonl": [row for t in trajectories for row in sft_rows(t)],
-            "rl_transition.jsonl": [row for t in trajectories for row in rl_rows(t)],
+            "decision_contexts.jsonl": [
+                x.model_dump(mode="json")
+                for x in objects.values()
+                if isinstance(x, DecisionContext)
+            ],
+            "sft.jsonl": [row for t in trajectories for row in sft_rows(t, policy=policy)],
+            "rl_transition.jsonl": [row for t in trajectories for row in rl_rows(t, policy=policy)],
         }
         events = runtime.storage.store.events(experiment_id)
         rows["events.jsonl"] = [e.model_dump(mode="json") for e in events]
@@ -52,6 +78,22 @@ async def export_experiment(runtime, experiment_id, directory):
         manifest = {
             "schema_version": "2.0",
             "experiment_id": experiment_id,
+            "lineage_root_experiment_id": root,
+            "training_policy": policy.model_dump(mode="json"),
+            "split_group": root,
+            "split": policy.split(root),
+            "run_purposes": {
+                purpose: sum(t.purpose == purpose for t in trajectories)
+                for purpose in ("experiment", "exact_replay", "branch", "unknown")
+            },
+            "context_coverage": {
+                coverage: sum(
+                    (s.decision_context.coverage if s.decision_context else "unknown") == coverage
+                    for t in trajectories
+                    for s in t.steps
+                )
+                for coverage in ("complete", "partial", "unknown")
+            },
             "event_count": len(events),
             "last_event_hash": events[-1].state_after_hash,
             "files": {

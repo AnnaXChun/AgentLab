@@ -96,9 +96,10 @@ async def evaluate_and_record(runtime, adapter, task, run, hypothesis_id, termin
             T.OBJECT_RECORDED,
             links=[(aid, receipt.artifact_id, "native_evaluation_input") for aid in related],
         )
-    runtime.verifiers["benchmark.native"] = NativeResultVerifier(adapter.name, receipt.sha256)
+    verifier_name = "native/" + adapter.name
+    runtime.verifiers[verifier_name] = NativeResultVerifier(adapter.name, receipt.sha256)
     evidence = await runtime.verify(
-        run.experiment_id, run.run_id, hypothesis_id, "benchmark.native", [receipt.artifact_id]
+        run.experiment_id, run.run_id, hypothesis_id, verifier_name, [receipt.artifact_id]
     )
     claim = await runtime.create_claim(
         run.experiment_id, "Task completed successfully", [evidence.evidence_id]

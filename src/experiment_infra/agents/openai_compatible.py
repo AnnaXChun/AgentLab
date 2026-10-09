@@ -88,7 +88,12 @@ class OpenAICompatibleAgentBackend:
         if self.owns_client:
             await self.client.aclose()
 
-    async def next_action(self, state):
+    def prepare_request(self, state):
+        """Build the complete model input without endpoint or authentication data.
+
+        Drivers can persist this request before invoking the model. The returned
+        JSON body includes the system instructions, schemas, and generation settings.
+        """
         self.last_call = None
         instructions = (
             "Return exactly one JSON action matching the schema. No markdown or private "
@@ -110,9 +115,23 @@ class OpenAICompatibleAgentBackend:
         ]
         if len(json.dumps(messages, ensure_ascii=False).encode()) > self.context_limit:
             raise ContextBudgetExceeded("Input context exceeds configured UTF-8 byte budget")
+        return {
+            "model": self.model,
+            "messages": messages,
+            "temperature": self.temperature,
+            "seed": self.seed,
+            "max_tokens": self.max_tokens,
+            "response_format": {"type": "json_object"},
+        }
+
+    async def next_action(self, state):
+        return await self.next_action_from_request(self.prepare_request(state))
+
+    async def next_action_from_request(self, request):
+        """Send exactly the prepared body; no hidden prompt or setting additions."""
         started = perf_counter()
         self.last_call = {
-            "model": self.model,
+            "model": request["model"],
             "usage": None,
             "latency_ms": None,
             "response_id": None,
@@ -123,14 +142,7 @@ class OpenAICompatibleAgentBackend:
             response = await self.client.post(
                 self.base_url.rstrip("/") + "/chat/completions",
                 headers={"Authorization": "Bearer " + self.api_key} if self.api_key else {},
-                json={
-                    "model": self.model,
-                    "messages": messages,
-                    "temperature": self.temperature,
-                    "seed": self.seed,
-                    "max_tokens": self.max_tokens,
-                    "response_format": {"type": "json_object"},
-                },
+                json=request,
             )
             response.raise_for_status()
             body = response.json()
@@ -149,7 +161,7 @@ class OpenAICompatibleAgentBackend:
                     "Model response refused, truncated, or not a JSON completion"
                 )
             parsed = AgentOutput.model_validate_json(choice["message"]["content"])
-            action = parsed.action(self.seed)
+            action = parsed.action(request["seed"])
             self.last_call.update(action=action.model_dump(mode="json"), status="OK")
             return action
         except (ValidationError, KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
