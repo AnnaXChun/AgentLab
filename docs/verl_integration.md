@@ -3,8 +3,9 @@
 The bridge connects the official veRL AgentLoop to ExperimentRuntime and records
 policy tokens, environment steps and verified rewards. Local adapter tests and a
 real Docker/runtime smoke pass. **Real GPU training has not been executed.** No
-Linux/NVIDIA server is currently available; policy updates, a trained checkpoint,
-and before/after benchmark success rates remain unverified. This is
+Linux/NVIDIA server was available during local validation; the user now plans
+to continue on a GPU host. See [GPU handoff](../HANDOFF.md). Policy updates, a
+trained checkpoint, and before/after benchmark success rates remain unverified. This is
 `0.4.0.dev0`, not completion of the V0.4 online-GRPO acceptance criteria.
 
 ## Official API and dependency boundary

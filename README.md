@@ -21,6 +21,7 @@ Version 0.3.3 adds success-only trajectory delivery and an offline reader. The
 V0.4 development preview adds an optional [veRL online bridge](docs/verl_integration.md),
 policy-token traces and verified rewards. Local tests and scripted Docker execution
 pass; real GRPO updates and benchmark RL still require Linux/NVIDIA validation.
+For continuing on a GPU host, read the [current progress and handoff](HANDOFF.md).
 
 ```python
 state = await runtime.get_state(experiment_id, run_id)

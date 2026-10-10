@@ -1,5 +1,7 @@
 # Project workflow
 
+- For V0.4 GPU continuation, read `HANDOFF.md` and `docs/verl_integration.md` first; distinguish local validation from pending real training acceptance.
+
 - Preserve the Experiment / Run / Artifact / Evidence / Claim / Trajectory architecture.
 - Keep benchmark-specific behavior in `src/experiment_infra/benchmarks/`.
 - Do not add multi-agent orchestration, training, or automatic recovery without a new user request.
