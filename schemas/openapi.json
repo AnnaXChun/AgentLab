@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Agent Experiment Infrastructure",
-    "version": "0.3.3"
+    "version": "0.4.0.dev0"
   },
   "paths": {
     "/health": {
@@ -2641,6 +2641,51 @@
         ],
         "title": "ObservationEvent"
       },
+      "PolicyIdentity": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "2.0",
+            "title": "Schema Version",
+            "default": "2.0"
+          },
+          "policy_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Policy Id"
+          },
+          "policy_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Policy Version"
+          },
+          "checkpoint_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Checkpoint Id"
+          },
+          "training_step": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Training Step"
+          },
+          "rollout_batch_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Rollout Batch Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "policy_id",
+          "policy_version",
+          "checkpoint_id",
+          "training_step",
+          "rollout_batch_id"
+        ],
+        "title": "PolicyIdentity"
+      },
       "ReplayResult": {
         "properties": {
           "schema_version": {
@@ -2727,6 +2772,27 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "trajectory_source": {
+            "type": "string",
+            "enum": [
+              "OFFLINE",
+              "ONLINE_RL",
+              "REPLAY",
+              "BRANCH"
+            ],
+            "title": "Trajectory Source",
+            "default": "OFFLINE"
+          },
+          "policy_identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "run_id": {
             "type": "string",
@@ -2858,6 +2924,27 @@
             "title": "Schema Version",
             "default": "2.0"
           },
+          "trajectory_source": {
+            "type": "string",
+            "enum": [
+              "OFFLINE",
+              "ONLINE_RL",
+              "REPLAY",
+              "BRANCH"
+            ],
+            "title": "Trajectory Source",
+            "default": "OFFLINE"
+          },
+          "policy_identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "hypothesis_ids": {
             "anyOf": [
               {
@@ -2923,6 +3010,27 @@
             "const": "2.0",
             "title": "Schema Version",
             "default": "2.0"
+          },
+          "trajectory_source": {
+            "type": "string",
+            "enum": [
+              "OFFLINE",
+              "ONLINE_RL",
+              "REPLAY",
+              "BRANCH"
+            ],
+            "title": "Trajectory Source",
+            "default": "OFFLINE"
+          },
+          "policy_identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PolicyIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "trajectory_id": {
             "type": "string",

@@ -14,6 +14,8 @@ async def exact_replay(runtime, run_id):
         parent_run_id=run_id,
         environment_spec=original.environment_spec,
         code_version=original.code_version,
+        trajectory_source="REPLAY",
+        policy_identity=original.policy_identity,
     )
     experiment = await runtime.ledger.get(original.experiment_id, "Experiment")
     comparisons = []
@@ -118,6 +120,8 @@ async def branch_replay(runtime, run_id, from_step, *, config=None):
         parent_step_id=step.step_id,
         environment_spec=original.environment_spec,
         code_version=original.code_version,
+        trajectory_source="BRANCH",
+        policy_identity=original.policy_identity,
     )
 
 

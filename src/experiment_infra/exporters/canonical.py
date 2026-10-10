@@ -35,6 +35,15 @@ async def export_experiment(runtime, experiment_id, directory):
             "sft.jsonl": [row for t in trajectories for row in sft_rows(t)],
             "rl_transition.jsonl": [row for t in trajectories for row in rl_rows(t)],
         }
+        for kind, filename in (
+            ("PolicyTrace", "policy_traces.jsonl"),
+            ("RewardResult", "rewards.jsonl"),
+        ):
+            values = [
+                x.model_dump(mode="json") for x in objects.values() if type(x).__name__ == kind
+            ]
+            if values:
+                rows[filename] = values
         events = runtime.storage.store.events(experiment_id)
         rows["events.jsonl"] = [e.model_dump(mode="json") for e in events]
         graph = await runtime.get_provenance(experiment_id)

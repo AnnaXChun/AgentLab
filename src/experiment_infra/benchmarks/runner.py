@@ -143,7 +143,7 @@ class BenchmarkRunner:
             "max_response_tokens": max_response_tokens,
             "context_limit": context_limit,
             "context_limit_unit": "utf8_bytes",
-            "runtime_version": importlib.metadata.version("scientific-harness"),
+            "runtime_version": importlib.metadata.version("experiment-infra"),
             "git_commit": git_commit(),
             "run_kind": run_kind,
             "protocol": getattr(adapter, "protocol", None),

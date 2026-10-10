@@ -27,6 +27,8 @@ class HypothesisRequest(m.Model):
 
 
 class RunRequest(m.Model):
+    trajectory_source: m.TrajectorySource = "OFFLINE"
+    policy_identity: m.PolicyIdentity | None = None
     hypothesis_ids: list[str] | None = None
     config: dict[str, Any] = Field(default_factory=dict)
     seed: int = 0

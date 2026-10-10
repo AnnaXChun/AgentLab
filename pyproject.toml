@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "scientific-harness"
-version = "0.3.3"
+name = "experiment-infra"
+version = "0.4.0.dev0"
 description = "Persistent execution, evidence and data infrastructure for external agents"
 requires-python = ">=3.12"
 license = "Apache-2.0"
@@ -17,6 +17,10 @@ dependencies = [
  "openinference-semantic-conventions>=0.1,<1", "httpx>=0.27,<1"
 ]
 [project.optional-dependencies]
+verl = [
+ "verl @ git+https://github.com/volcengine/verl.git@55a06a164d3d308b407fa9063bcfef25a41f0ea4 ; python_version < '3.13'",
+ "qwen-vl-utils", "torchvision", "TransferQueue==0.1.10"
+]
 benchmarks = [
  "tau2 @ git+https://github.com/sierra-research/tau2-bench.git@5bfa7e37b36656b37dc6d022156be6563c1007f3",
  "datasets>=3,<4", "websockets>=13", "scipy>=1.10", "pydub>=0.25"
@@ -31,7 +35,7 @@ packages = ["packages", "adapters", "domain_packs", "src/experiment_infra"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = ["integration: requires live Postgres and Docker"]
+markers = ["integration: requires live Postgres and Docker", "verl_integration: requires VERL_INTEGRATION=1 and Linux/NVIDIA"]
 [tool.ruff]
 line-length = 100
 

@@ -1,0 +1,73 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "reward_id": {
+      "title": "Reward Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scalar_reward": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Scalar Reward",
+      "type": "number"
+    },
+    "reward_signals": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Reward Signals",
+      "type": "object"
+    },
+    "verification_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Verification Ids",
+      "type": "array"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "reward_source": {
+      "minLength": 1,
+      "title": "Reward Source",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "run_id",
+    "scalar_reward",
+    "reward_signals",
+    "verification_ids",
+    "evidence_ids",
+    "reward_source"
+  ],
+  "title": "RewardResult",
+  "type": "object"
+}

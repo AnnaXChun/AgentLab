@@ -109,6 +109,8 @@ class Ledger:
                         "Snapshot",
                         "ActionEvent",
                         "CounterfactualLink",
+                        "PolicyTrace",
+                        "RewardResult",
                     }:
                         raise ValueError(
                             "Immutable object identity already registered; create a new version"

@@ -1,0 +1,7 @@
+hydra:
+  searchpath:
+    - pkg://verl.trainer.config
+
+defaults:
+  - _grpo_base
+  - _self_

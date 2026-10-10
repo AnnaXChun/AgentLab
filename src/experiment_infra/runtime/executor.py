@@ -222,6 +222,8 @@ class ExperimentRuntime:
         parent_step_id=None,
         environment_spec=None,
         code_version=None,
+        trajectory_source="OFFLINE",
+        policy_identity=None,
     ):
         experiment = await self.ledger.get(experiment_id, "Experiment")
         hypotheses = hypothesis_ids if hypothesis_ids is not None else experiment.hypothesis_ids
@@ -240,7 +242,11 @@ class ExperimentRuntime:
                 initial.environment.get("spec", spec.model_dump(mode="json"))
             )
         execution_metadata = environment_metadata()
+        if trajectory_source == "ONLINE_RL" and policy_identity is None:
+            raise ValueError("Online runs require policy identity")
         run = Run(
+            trajectory_source=trajectory_source,
+            policy_identity=policy_identity,
             experiment_id=experiment_id,
             hypothesis_ids=hypotheses,
             environment_snapshot_id=snapshot_id,
@@ -253,6 +259,8 @@ class ExperimentRuntime:
             parent_step_id=parent_step_id,
         )
         trajectory = Trajectory(
+            trajectory_source=run.trajectory_source,
+            policy_identity=run.policy_identity,
             trajectory_id=run.trajectory_id,
             experiment_id=experiment_id,
             run_id=run.run_id,

@@ -60,6 +60,51 @@
       },
       "title": "EnvironmentSpec",
       "type": "object"
+    },
+    "PolicyIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "policy_id": {
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "policy_version": {
+          "minLength": 1,
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "checkpoint_id": {
+          "minLength": 1,
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "training_step": {
+          "minimum": 0,
+          "title": "Training Step",
+          "type": "integer"
+        },
+        "rollout_batch_id": {
+          "minLength": 1,
+          "title": "Rollout Batch Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "policy_version",
+        "checkpoint_id",
+        "training_step",
+        "rollout_batch_id"
+      ],
+      "title": "PolicyIdentity",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -69,6 +114,28 @@
       "default": "2.0",
       "title": "Schema Version",
       "type": "string"
+    },
+    "trajectory_source": {
+      "default": "OFFLINE",
+      "enum": [
+        "OFFLINE",
+        "ONLINE_RL",
+        "REPLAY",
+        "BRANCH"
+      ],
+      "title": "Trajectory Source",
+      "type": "string"
+    },
+    "policy_identity": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PolicyIdentity"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "run_id": {
       "title": "Run Id",

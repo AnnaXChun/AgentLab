@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
 
 from packages.core.models.schemas import now, uid
 
@@ -47,7 +47,20 @@ class Hypothesis(Model):
     parent_hypothesis_id: str | None = None
 
 
+TrajectorySource = Literal["OFFLINE", "ONLINE_RL", "REPLAY", "BRANCH"]
+
+
+class PolicyIdentity(Model):
+    policy_id: str = Field(min_length=1)
+    policy_version: str = Field(min_length=1)
+    checkpoint_id: str = Field(min_length=1)
+    training_step: int = Field(ge=0, strict=True)
+    rollout_batch_id: str = Field(min_length=1)
+
+
 class Run(Model):
+    trajectory_source: TrajectorySource = "OFFLINE"
+    policy_identity: PolicyIdentity | None = None
     run_id: str = Field(default_factory=uid)
     experiment_id: str
     hypothesis_ids: list[str] = Field(default_factory=list)
@@ -64,6 +77,12 @@ class Run(Model):
     parent_run_id: str | None = None
     parent_step_id: str | None = None
     trajectory_id: str = Field(default_factory=uid)
+
+    @model_validator(mode="after")
+    def online_identity(self):
+        if self.trajectory_source == "ONLINE_RL" and self.policy_identity is None:
+            raise ValueError("Online run requires policy identity")
+        return self
 
 
 ArtifactType = Literal[
@@ -207,6 +226,8 @@ class TrajectoryStep(Model):
 
 
 class Trajectory(Model):
+    trajectory_source: TrajectorySource = "OFFLINE"
+    policy_identity: PolicyIdentity | None = None
     trajectory_id: str
     experiment_id: str
     run_id: str
@@ -215,6 +236,12 @@ class Trajectory(Model):
     final_status: str
     final_claims: list[Claim] = Field(default_factory=list)
     total_cost: float | None = None
+
+    @model_validator(mode="after")
+    def online_identity(self):
+        if self.trajectory_source == "ONLINE_RL" and self.policy_identity is None:
+            raise ValueError("Online trajectory requires policy identity")
+        return self
 
 
 class CounterfactualLink(Model):
@@ -252,7 +279,87 @@ class ReplayResult(Model):
     comparisons: list[dict[str, Any]]
 
 
+class PolicyStepSpan(Model):
+    trajectory_step_id: str | None = None
+    response_token_start: StrictInt
+    response_token_end: StrictInt
+    action_token_start: StrictInt | None = None
+    action_token_end: StrictInt | None = None
+    tool_response_token_start: StrictInt | None = None
+    tool_response_token_end: StrictInt | None = None
+
+
+class PolicyTrace(PolicyIdentity):
+    policy_trace_id: str = Field(default_factory=uid)
+    experiment_id: str
+    run_id: str
+    trajectory_id: str
+    trajectory_source: TrajectorySource = "ONLINE_RL"
+    prompt_token_ids: list[StrictInt]
+    response_token_ids: list[StrictInt]
+    response_mask: list[Literal[0, 1]]
+    response_logprobs: list[float] | None = None
+    step_spans: list[PolicyStepSpan]
+    sampling_params: dict[str, Any]
+    created_at: datetime = Field(default_factory=now)
+
+    @model_validator(mode="after")
+    def integrity(self):
+        length = len(self.response_token_ids)
+        if len(self.response_mask) != length:
+            raise ValueError("Response IDs and mask must align exactly")
+        if self.response_logprobs is not None and len(self.response_logprobs) != length:
+            raise ValueError("Response logprobs must align exactly")
+        if any(x < 0 for x in self.prompt_token_ids + self.response_token_ids):
+            raise ValueError("Token IDs must be nonnegative")
+        last = 0
+        covered = set()
+        seen = set()
+        for span in self.step_spans:
+            start, end = span.response_token_start, span.response_token_end
+            if not last <= start < end <= length:
+                raise ValueError("Generation spans must be ordered and nonoverlapping")
+            if any(x != 1 for x in self.response_mask[start:end]):
+                raise ValueError("Generation span covers non-policy tokens")
+            covered.update(range(start, end))
+            last = end
+            for prefix, mask in (("action", 1), ("tool_response", 0)):
+                a, b = getattr(span, prefix + "_token_start"), getattr(span, prefix + "_token_end")
+                if (a is None) != (b is None):
+                    raise ValueError("Span endpoints must both be present or absent")
+                if a is not None:
+                    if not 0 <= a < b <= length or any(x != mask for x in self.response_mask[a:b]):
+                        raise ValueError("Invalid token span or response mask")
+                    if prefix == "action" and not start <= a < b <= end:
+                        raise ValueError("Action must belong to its generation")
+                    if prefix == "tool_response":
+                        if a < end:
+                            raise ValueError("Tool response precedes its action")
+                        last = b
+            if span.trajectory_step_id:
+                if span.trajectory_step_id in seen or span.action_token_start is None:
+                    raise ValueError("Each environment step needs one known action span")
+                seen.add(span.trajectory_step_id)
+        if covered != {i for i, value in enumerate(self.response_mask) if value == 1}:
+            raise ValueError("Every policy token must belong to a recorded generation span")
+        return self
+
+
+class RewardResult(Model):
+    reward_id: str = Field(default_factory=uid)
+    experiment_id: str
+    run_id: str
+    scalar_reward: float = Field(ge=0, le=1)
+    reward_signals: dict[str, float]
+    verification_ids: list[str] = Field(min_length=1)
+    evidence_ids: list[str] = Field(min_length=1)
+    reward_source: str = Field(min_length=1)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 OBJECT_IDS = {
+    "PolicyTrace": "policy_trace_id",
+    "RewardResult": "reward_id",
     "Experiment": "experiment_id",
     "Hypothesis": "hypothesis_id",
     "Run": "run_id",

@@ -18,6 +18,10 @@ Version 0.3.3 adds success-only trajectory delivery and an offline reader. The
 [full telecom-solo base evaluation](docs/qwen_full_benchmark.md) passed 13 of
 114 tasks (11.40%); all 13 successful trajectories passed replay and integrity checks.
 
+V0.4 development preview adds an optional [veRL online bridge](docs/verl_integration.md),
+policy-token traces and verified rewards. Local tests and scripted Docker execution
+pass; real GRPO updates and benchmark RL still require Linux/NVIDIA validation.
+
 ```python
 state = await runtime.get_state(experiment_id, run_id)
 action = await agent_backend.next_action(state)

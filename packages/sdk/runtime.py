@@ -44,7 +44,7 @@ def environment_metadata():
         "dependencies": {
             name: importlib.metadata.version(name)
             for name in (
-                "scientific-harness",
+                "experiment-infra",
                 "pydantic",
                 "sqlalchemy",
                 "mcp",

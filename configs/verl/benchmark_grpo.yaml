@@ -1,0 +1,18 @@
+hydra:
+  searchpath:
+    - pkg://verl.trainer.config
+
+defaults:
+  - _grpo_base
+  - _self_
+
+experiment_bridge:
+  benchmark: tau2
+  train_tasks: 8
+  val_tasks: 5
+  max_steps: 25
+  max_generation_tokens: 512
+
+data:
+  max_prompt_length: 16384
+  max_response_length: 8192

@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "PolicyStepSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "trajectory_step_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trajectory Step Id"
+        },
+        "response_token_start": {
+          "title": "Response Token Start",
+          "type": "integer"
+        },
+        "response_token_end": {
+          "title": "Response Token End",
+          "type": "integer"
+        },
+        "action_token_start": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action Token Start"
+        },
+        "action_token_end": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action Token End"
+        },
+        "tool_response_token_start": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Response Token Start"
+        },
+        "tool_response_token_end": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Response Token End"
+        }
+      },
+      "required": [
+        "response_token_start",
+        "response_token_end"
+      ],
+      "title": "PolicyStepSpan",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "policy_id": {
+      "minLength": 1,
+      "title": "Policy Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "training_step": {
+      "minimum": 0,
+      "title": "Training Step",
+      "type": "integer"
+    },
+    "rollout_batch_id": {
+      "minLength": 1,
+      "title": "Rollout Batch Id",
+      "type": "string"
+    },
+    "policy_trace_id": {
+      "title": "Policy Trace Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "trajectory_id": {
+      "title": "Trajectory Id",
+      "type": "string"
+    },
+    "trajectory_source": {
+      "default": "ONLINE_RL",
+      "enum": [
+        "OFFLINE",
+        "ONLINE_RL",
+        "REPLAY",
+        "BRANCH"
+      ],
+      "title": "Trajectory Source",
+      "type": "string"
+    },
+    "prompt_token_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Prompt Token Ids",
+      "type": "array"
+    },
+    "response_token_ids": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Response Token Ids",
+      "type": "array"
+    },
+    "response_mask": {
+      "items": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer"
+      },
+      "title": "Response Mask",
+      "type": "array"
+    },
+    "response_logprobs": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Response Logprobs"
+    },
+    "step_spans": {
+      "items": {
+        "$ref": "#/$defs/PolicyStepSpan"
+      },
+      "title": "Step Spans",
+      "type": "array"
+    },
+    "sampling_params": {
+      "additionalProperties": true,
+      "title": "Sampling Params",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "policy_id",
+    "policy_version",
+    "checkpoint_id",
+    "training_step",
+    "rollout_batch_id",
+    "experiment_id",
+    "run_id",
+    "trajectory_id",
+    "prompt_token_ids",
+    "response_token_ids",
+    "response_mask",
+    "step_spans",
+    "sampling_params"
+  ],
+  "title": "PolicyTrace",
+  "type": "object"
+}
